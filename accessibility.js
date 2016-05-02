@@ -2,35 +2,36 @@
 var m, o, c;
 
 /* global webgl context, shader program */
-var gl, sp;
+//var gl, sp;
 
-/* global center berlin, default zoom, preload an example tile */
+/* global center berlin, default zoom */
 var CENTER_BERLIN = [52.516, 13.377];
-var DEFAULT_ZOOM = 17;
+var DEFAULT_ZOOM = 13;
 
 /* cache for all tile's vertex, index and color buffers */
-var TILE_CACHE;
-var TRAVEL_TIME = 300;
+//var TILE_CACHE;
+//var TRAVEL_TIME = 300;
 
 /* some map geometries */
-var EARTH_EQUATOR = 40075016.68557849;
-var EARTH_RADIUS = 6378137.0;
-var TILE_SIZE  = 256.0;
+//var EARTH_EQUATOR = 40075016.68557849;
+//var EARTH_RADIUS = 6378137.0;
+//var WORLD_PIXEL  = 256.0;
+/* var WORLD_PIXEL  = 1; // @TODO normalize this */
 
-var COLOR_GRAD = [
-   49.0 / 255.0,  54.0 / 255.0, 149.0 / 255.0,  /* #313695 */
-   69.0 / 255.0, 117.0 / 255.0, 180.0 / 255.0,  /* #4575b4 */
-  116.0 / 255.0, 173.0 / 255.0, 209.0 / 255.0,  /* #74add1 */
-  171.0 / 255.0, 217.0 / 255.0, 233.0 / 255.0,  /* #abd9e9 */
-  224.0 / 255.0, 243.0 / 255.0, 248.0 / 255.0,  /* #e0f3f8 */
-  254.0 / 255.0, 224.0 / 255.0, 144.0 / 255.0,  /* #fee090 */
-  253.0 / 255.0, 174.0 / 255.0,  97.0 / 255.0,  /* #fdae61 */
-  244.0 / 255.0, 109.0 / 255.0,  67.0 / 255.0,  /* #f46d43 */
-  215.0 / 255.0,  48.0 / 255.0,  39.0 / 255.0,  /* #d73027 */
-  165.0 / 255.0,           0.0,  38.0 / 255.0   /* #a50026 */
-];
-
-var travelTimeControl, contextButtons;
+//var COLOR_GRAD = [
+//   49.0 / 255.0,  54.0 / 255.0, 149.0 / 255.0,  /* #313695 */
+//   69.0 / 255.0, 117.0 / 255.0, 180.0 / 255.0,  /* #4575b4 */
+//  116.0 / 255.0, 173.0 / 255.0, 209.0 / 255.0,  /* #74add1 */
+//  171.0 / 255.0, 217.0 / 255.0, 233.0 / 255.0,  /* #abd9e9 */
+//  224.0 / 255.0, 243.0 / 255.0, 248.0 / 255.0,  /* #e0f3f8 */
+//  254.0 / 255.0, 224.0 / 255.0, 144.0 / 255.0,  /* #fee090 */
+//  253.0 / 255.0, 174.0 / 255.0,  97.0 / 255.0,  /* #fdae61 */
+//  244.0 / 255.0, 109.0 / 255.0,  67.0 / 255.0,  /* #f46d43 */
+//  215.0 / 255.0,  48.0 / 255.0,  39.0 / 255.0,  /* #d73027 */
+//  165.0 / 255.0,           0.0,  38.0 / 255.0   /* #a50026 */
+//];
+//
+//var travelTimeControl, contextButtons;
 
 /**
  * initialize the distance map visualization
@@ -39,7 +40,7 @@ function accessibility_map() {
 
   /* leaflet map canvas */
   m = L.map('map', {
-    minZoom: 8,
+    minZoom: 3,
     maxZoom: 21,
     maxBounds: L.latLngBounds(L.latLng(49.6, 6.0), L.latLng(54.8, 20.4)),
     noWrap: true,
@@ -49,15 +50,15 @@ function accessibility_map() {
   /* set viewport to berlin */
   m.setView(CENTER_BERLIN, DEFAULT_ZOOM);
 
-// /* setup leaflet canvas webgl overlay */
-// o = L.canvasOverlay().drawing(drawGL).addTo(m);
-// c = o.canvas()
-// o.canvas.width = c.clientWidth;
-// o.canvas.height = c.clientHeight;
+  /* setup leaflet canvas webgl overlay */
+  o = L.canvasOverlay().drawing(drawGL).addTo(m);
+  c = o.canvas()
+  o.canvas.width = c.clientWidth;
+  o.canvas.height = c.clientHeight;
 
-// /* initialize webgl on canvas overlay */
-// initGL();
-// initShaders();
+  /* initialize webgl on canvas overlay */
+  initGL();
+  initShaders();
 
   /* setup map with mapbox basemap tiles */
   var tileLayerUrl =
@@ -66,7 +67,7 @@ function accessibility_map() {
   var token =
     'pk.eyJ1IjoiZG9uc2Nob2UiLCJhIjoiMkN5RUk0QSJ9.FGcEYWjfgcJUmSyN1tkwgQ';
   var mapboxTiles = L.tileLayer(tileLayerUrl, {
-    attribution: 'webgl gltf tiling demo',
+    attribution: 'WebGL/glTF Tiling PoC #5 | &copy; 2016 A. Schoedon',
     id: 'mapbox.dark',
     accessToken: token,
     noWrap: true,
@@ -109,16 +110,16 @@ function accessibility_map() {
 // var buttonOptions = {
 //   buttons: [
 //     {
-//       label: 'gltf',
-//       key: 'gltf',
-//       tooltip: 'enable gltf tiles on webgl overlay',
-//       checked: false
+// label: 'gltf',
+// key: 'gltf',
+// tooltip: 'enable gltf tiles on webgl overlay',
+// checked: false
 //     },
 //     {
-//       label: 'none',
-//       key: 'none',
-//       tooltip: 'disable webgl overlay',
-//       checked: true
+// label: 'none',
+// key: 'none',
+// tooltip: 'disable webgl overlay',
+// checked: true
 //     }
 //   ]
 // }
@@ -143,8 +144,8 @@ function accessibility_map() {
 // updateOverlay();
 }
 //
-//      /* updates network graph based on travel time and zoom level */
-//      function updateOverlay() {
+///* updates network graph based on travel time and zoom level */
+//function updateOverlay() {
 //
 // /* reset the scene */
 // TILE_CACHE.resetOnZoom(m.getZoom());
@@ -159,9 +160,9 @@ function accessibility_map() {
 //     var idx = new Uint16Array(data.buffers.indices);
 //     var clr = new Float32Array(data.buffers.colours);
 //     var tileBuffer = L.tileBuffer(vtx, idx, clr, {
-//       x: 0,
-//       y: 0,
-//       zoom: m.getZoom()
+// x: 0,
+// y: 0,
+// zoom: m.getZoom()
 //     });
 //     TILE_CACHE.addTile(tileBuffer);
 //
@@ -169,112 +170,112 @@ function accessibility_map() {
 //     drawGL();
 //   });
 // }
-//      }
-//
-//      /**
-//* initialize webgl context
-//*/
-//      function initGL() {
-//
-// /* wrap webgl context in a debug context */
-// gl = WebGLDebugUtils.makeDebugContext(
-//   WebGLUtils.setupWebGL(c),
-//   throwOnGLError
-// );
-//
-// /* init webgl debug context */
-// WebGLDebugUtils.init(gl);
-//      }
-//
-//      /**
-//* init vertex/fragment shader and shader program
-//*/
-//      function initShaders() {
-//
-// /* vertex shader */
-// var vShader = getShader("shader-vtx");
-//
-// /* fragment shader */
-// var fShader = getShader("shader-frg");
-//
-// /* shader program */
-// sp = gl.createProgram();
-// gl.attachShader(sp, vShader);
-// gl.attachShader(sp, fShader);
-// gl.linkProgram(sp);
-//
-// /* check shader linking */
-// if (!gl.getProgramParameter(sp, gl.LINK_STATUS)) {
-//   log("initShaders(): [ERR]: could not init shaders");
-// } else {
-//
-//   /* use shader programm */
-//   gl.useProgram(sp);
-//
-//   /* get attribute and uniform locations */
-//   sp.uniformMatrix = gl.getUniformLocation(sp, "u_matrix");
-//   sp.vertexPosition = gl.getAttribLocation(sp, "a_vertex");
-//   sp.vertexColor = gl.getAttribLocation(sp, "a_color");
-//   gl.enableVertexAttribArray(sp.vertexPosition);
-//   gl.enableVertexAttribArray(sp.vertexColor);
-// }
-//      }
-//
-//      /**
-//* parse shader from dom by id
-//*
-//* @param {string} id the shader element id in the document
-//* @return {object} the compiled shader
-//*/
-//      function getShader(id) {
-//
-// var shader;
-// var shaderScript = document.getElementById(id);
-//
-// if (!shaderScript) {
-//   log("getShader(id): [WRN]: shader not found");
-//   return null;
-// }
-//
-// var str = "";
-// var k = shaderScript.firstChild;
-// while (k) {
-//   if (k.nodeType == 3)
-//     str += k.textContent;
-//   k = k.nextSibling;
-// }
-//
-// if (shaderScript.type == "x-shader/x-fragment") {
-//
-//   /* fragment shader */
-//   shader = gl.createShader(gl.FRAGMENT_SHADER);
-// } else if (shaderScript.type == "x-shader/x-vertex") {
-//
-//   /* vertex shader */
-//   shader = gl.createShader(gl.VERTEX_SHADER);
-// } else {
-//   log("getShader(id): [WRN]: unknown shader type");
-//   return null;
-// }
-//
-// gl.shaderSource(shader, str);
-// gl.compileShader(shader);
-//
-// /* check shader compile status */
-// if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-//   log("getShader(id): [ERR]: shader failed to compile");
-//   log(gl.getShaderInfoLog(shader));
-//   return null;
-// }
-//
-// return shader;
-//      }
-//
-//      /**
-//* draw all tiles from cache on the canvas overlay
-//*/
-//      function drawGL() {
-//
+//}
+
+/**
+* initialize webgl context
+*/
+function initGL() {
+
+  /* wrap webgl context in a debug context */
+  gl = WebGLDebugUtils.makeDebugContext(
+    WebGLUtils.setupWebGL(c),
+    throwOnGLError
+  );
+
+  /* init webgl debug context */
+  WebGLDebugUtils.init(gl);
+}
+
+/**
+* init vertex/fragment shader and shader program
+*/
+function initShaders() {
+
+  /* vertex shader */
+  var vShader = getShader("shader-vtx");
+
+  /* fragment shader */
+  var fShader = getShader("shader-frg");
+
+  /* shader program */
+  sp = gl.createProgram();
+  gl.attachShader(sp, vShader);
+  gl.attachShader(sp, fShader);
+  gl.linkProgram(sp);
+
+  /* check shader linking */
+  if (!gl.getProgramParameter(sp, gl.LINK_STATUS)) {
+    log("initShaders(): [ERR]: could not init shaders");
+  } else {
+
+    /* use shader programm */
+    gl.useProgram(sp);
+
+    /* get attribute and uniform locations */
+    sp.uniformMatrix = gl.getUniformLocation(sp, "u_matrix");
+    sp.vertexPosition = gl.getAttribLocation(sp, "a_vertex");
+    sp.vertexColor = gl.getAttribLocation(sp, "a_color");
+    gl.enableVertexAttribArray(sp.vertexPosition);
+    gl.enableVertexAttribArray(sp.vertexColor);
+  }
+}
+
+/**
+* parse shader from dom by id
+*
+* @param {string} id the shader element id in the document
+* @return {object} the compiled shader
+*/
+function getShader(id) {
+
+  var shader;
+  var shaderScript = document.getElementById(id);
+
+  if (!shaderScript) {
+    log("getShader(id): [WRN]: shader not found");
+    return null;
+  }
+
+  var str = "";
+  var k = shaderScript.firstChild;
+  while (k) {
+    if (k.nodeType == 3)
+      str += k.textContent;
+    k = k.nextSibling;
+  }
+
+  if (shaderScript.type == "x-shader/x-fragment") {
+
+    /* fragment shader */
+    shader = gl.createShader(gl.FRAGMENT_SHADER);
+  } else if (shaderScript.type == "x-shader/x-vertex") {
+
+    /* vertex shader */
+    shader = gl.createShader(gl.VERTEX_SHADER);
+  } else {
+    log("getShader(id): [WRN]: unknown shader type");
+    return null;
+  }
+
+  gl.shaderSource(shader, str);
+  gl.compileShader(shader);
+
+  /* check shader compile status */
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    log("getShader(id): [ERR]: shader failed to compile");
+    log(gl.getShaderInfoLog(shader));
+    return null;
+  }
+
+  return shader;
+}
+
+/**
+* draw all tiles from cache on the canvas overlay
+*/
+function drawGL() {
+
 // /* only proceed if context is available */
 // if (gl) {
 //
@@ -339,17 +340,17 @@ function accessibility_map() {
 //     var vtxBuffer = gl.createBuffer();
 //     gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
 //     gl.bufferData(
-//       gl.ARRAY_BUFFER,
-//       tileBuffers[i].getVertexBuffer(),
-//       gl.STATIC_DRAW
+// gl.ARRAY_BUFFER,
+// tileBuffers[i].getVertexBuffer(),
+// gl.STATIC_DRAW
 //     );
 //     gl.vertexAttribPointer(
-//       sp.vertexPosition,
-//       vtxSize,
-//       gl.FLOAT,
-//       false,
-//       0,
-//       0
+// sp.vertexPosition,
+// vtxSize,
+// gl.FLOAT,
+// false,
+// 0,
+// 0
 //     );
 //
 //     /* create color buffer */
@@ -367,30 +368,30 @@ function accessibility_map() {
       //gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
 //   }
 // }
-//      }
-//
-//      /**
+}
+
+///**
 //* helper: simple translation along x/y (2D)
 //*
 //* @param {Float32Array} m the output matrix to be translated
 //* @param {integer} x the translation factor along x
 //* @param {integer} y the translation factor along y
 //*/
-//      function translateMatrix(m, x, y) {
+//function translateMatrix(m, x, y) {
 // m[12] += m[0] * x + m[4] * y;
 // m[13] += m[1] * x + m[5] * y;
 // m[14] += m[2] * x + m[6] * y;
 // m[15] += m[3] * x + m[7] * y;
-//      }
+//}
 //
-//      /**
+///**
 //* helper: simple scaling along x/y (2D)
 //*
 //* @param {Float32Array} m the output matrix to be scaled
 //* @param {integer} x the scaling factor along x
 //* @param {integer} y the scaling factor along y
 //*/
-//      function scaleMatrix(m, x, y) {
+//function scaleMatrix(m, x, y) {
 // m[0] *= x;
 // m[1] *= x;
 // m[2] *= x;
@@ -399,46 +400,46 @@ function accessibility_map() {
 // m[5] *= y;
 // m[6] *= y;
 // m[7] *= y;
-//      }
+//}
 //
-//      /**
+///**
 //* Converts spherical web mercator to tile pixel X/Y at zoom level 0
 //* for 256x256 tile size and inverts y coordinates. (EPSG: 3857)
 //*
 //* @param {L.point} p Leaflet point with web mercator coordinates
 //* @return {L.point} Leaflet point with tile pixel x and y corrdinates
 //*/
-//      function mercatorToPixels(p)  {
-  //var pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / TILE_SIZE);
-  //var pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / -TILE_SIZE));
+//function mercatorToPixels(p)  {
+  //var pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / WORLD_PIXEL);
+  //var pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / -WORLD_PIXEL));
 // return L.point(pixelX, pixelY);
-//      }
+//}
 //
-//      /**
+///**
 //* Converts latitude/longitude to tile pixel X/Y at zoom level 0
 //* for 256x256 tile size and inverts y coordinates. (EPSG: 4326)
 //*
 //* @param {L.point} p Leaflet point in EPSG:3857
 //* @return {L.point} Leaflet point with tile pixel x and y corrdinates
 //*/
-//      function latLonToPixels(lat, lon) {
+//function latLonToPixels(lat, lon) {
 // var sinLat = Math.sin(lat * Math.PI / 180.0);
-// var pixelX = ((lon + 180) / 360) * TILE_SIZE;
-  //var pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4)) * TILE_SIZE;
+// var pixelX = ((lon + 180) / 360) * WORLD_PIXEL;
+  //var pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4)) * WORLD_PIXEL;
 // return L.point(pixelX, pixelY);
-//      }
+//}
 //
-//      /**
+///**
 //* log to console with timestamps
 //*
 //* @param {string} s the string to log
 //*/
-//      function log(s) {
+//function log(s) {
 // var n = new Date().getTime() / 1000.0;
 // window.console.log('[' + n.toFixed(3) + '] ' + s);
-//      }
+//}
 //
-//      /**
+///**
 //* throw webgl errors
 //*
 //* @param {glEnum} e the webgl error
@@ -446,6 +447,6 @@ function accessibility_map() {
 //* @param {object} args additional arguments
 //* @throws webgl error
 //*/
-//      function throwOnGLError(e, f, args) {
+//function throwOnGLError(e, f, args) {
   //throw WebGLDebugUtils.glEnumToString(e) + " was caused by call to " + f;
-//      };
+//};
