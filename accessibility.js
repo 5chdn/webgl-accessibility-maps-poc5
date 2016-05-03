@@ -438,15 +438,15 @@ function drawGL() {
 // var n = new Date().getTime() / 1000.0;
 // window.console.log('[' + n.toFixed(3) + '] ' + s);
 //}
-//
-///**
-//* throw webgl errors
-//*
-//* @param {glEnum} e the webgl error
-//* @param {string} f the name of the last function call
-//* @param {object} args additional arguments
-//* @throws webgl error
-//*/
-//function throwOnGLError(e, f, args) {
-  //throw WebGLDebugUtils.glEnumToString(e) + " was caused by call to " + f;
-//};
+
+/**
+* throw webgl errors
+*
+* @param {glEnum} e the webgl error
+* @param {string} f the name of the last function call
+* @param {object} args additional arguments
+* @throws webgl error
+*/
+function throwOnGLError(e, f, args) {
+  throw WebGLDebugUtils.glEnumToString(e) + " was caused by call to " + f;
+};
