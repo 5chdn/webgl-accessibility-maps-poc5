@@ -2,15 +2,17 @@
 var m, o, c;
 
 /* global webgl context, shader program */
-//var gl, sp;
+var gl, sp;
 
 /* global center berlin, default zoom */
 var CENTER_BERLIN = [52.516, 13.377];
 var DEFAULT_ZOOM = 13;
 
 /* cache for all tile's vertex, index and color buffers */
-//var TILE_CACHE;
-//var TRAVEL_TIME = 300;
+var TILE_CACHE;
+
+/* default travel time is 30 minutes */
+var DEFAULT_TRAVEL_TIME = 1800;
 
 /* some map geometries */
 //var EARTH_EQUATOR = 40075016.68557849;
@@ -31,7 +33,8 @@ var DEFAULT_ZOOM = 13;
 //  165.0 / 255.0,           0.0,  38.0 / 255.0   /* #a50026 */
 //];
 //
-//var travelTimeControl, contextButtons;
+
+//var travelTimeControl; //, contextButtons;
 
 /**
  * initialize the distance map visualization
@@ -75,102 +78,76 @@ function accessibility_map() {
     attributionControl: false
   }).addTo(m);
 
-// /* use a r360 time slider to adjust travel time */
-// travelTimeControl = r360.travelTimeControl({
-//   travelTimes: [
-//     { time:   60, color: "#313695" },
-//     { time:  120, color: "#4575b4" },
-//     { time:  180, color: "#74add1" },
-//     { time:  240, color: "#abd9e9" },
-//     { time:  300, color: "#e0f3f8" },
-//     { time:  360, color: "#fee090" },
-//     { time:  420, color: "#fdae61" },
-//     { time:  480, color: "#f46d43" },
-//     { time:  540, color: "#d73027" },
-//     { time:  600, color: "#a50026" }
-//   ],
-//   unit      : ' min',
-//   position  : 'topright',
-//   label     : 'travel time',
-//   initValue : TRAVEL_TIME / 60
-// });
-//
-// /* update overlay on slider move and stop events */
-// travelTimeControl.onSlideMove(function(){
-//   TRAVEL_TIME = travelTimeControl.getMaxValue();
-//   updateOverlay();
-// });
-// travelTimeControl.onSlideStop(function(){
-//   TRAVEL_TIME = travelTimeControl.getMaxValue();
-//   updateOverlay();
-// });
-// travelTimeControl.addTo(m);
+  /* use a r360 time slider to adjust travel time */
+  travelTimeControl = r360.travelTimeControl({
+    travelTimes: [
+      { time:  300, color: "#313695" }, /* #3b55a4 */
+      { time:  600, color: "#4575b4" }, /* #5c91c2 */
+      { time:  900, color: "#74add1" }, /* #8fc3dd */
+      { time: 1200, color: "#abd9e9" }, /* #c5e6f0 */
+      { time: 1500, color: "#e0f3f8" }, /* #eff9db */
+      { time: 1800, color: "#ffffbf" }, /* #feefa7 */
+      { time: 2100, color: "#fee090" }, /* #fdc778 */
+      { time: 2400, color: "#fdae61" }, /* #f88d52 */
+      { time: 2700, color: "#f46d43" }, /* #e54e35 */
+      { time: 3000, color: "#d73027" }, /* #be1826 */
+      { time: 3300, color: "#a50026" }, /* #900016 */
+      { time: 3600, color: "#7b000b" }, /* #660000 */
+    ],
+    unit      : ' min',
+    position  : 'topright',
+    label     : 'travel time',
+    initValue : DEFAULT_TRAVEL_TIME / 60
+  });
 
-// /* create radio buttons to toggle gl context */
-// var buttonOptions = {
-//   buttons: [
-//     {
-// label: 'gltf',
-// key: 'gltf',
-// tooltip: 'enable gltf tiles on webgl overlay',
-// checked: false
-//     },
-//     {
-// label: 'none',
-// key: 'none',
-// tooltip: 'disable webgl overlay',
-// checked: true
-//     }
-//   ]
-// }
-// contextButtons = r360.radioButtonControl(buttonOptions);
-// contextButtons.onChange(function(){ updateOverlay(); })
-// contextButtons.addTo(m);
+  /* update overlay on slider events */
+  travelTimeControl.onSlideStop(function(){
+    DEFAULT_TRAVEL_TIME = travelTimeControl.getMaxValue();
+    updateOverlay();
+  });
+  travelTimeControl.addTo(m);
 
-// /* init cache for tile buffers for current zoom level */
-// TILE_CACHE = L.tileBufferCollection(m.getZoom());
-//
-// /* reset tile buffer cache for each zoom level change */
-// m.on('zoomstart', function(e) {
-//   TILE_CACHE.resetOnZoom(m.getZoom());
-// });
-//
-// /* update overlay and redraw streets on zoom end event */
-// m.on('zoomend', function(e) {
-//   updateOverlay();
-// });
-//
-// /* draw initial distance map */
-// updateOverlay();
+  /* init cache for tile buffers for current zoom level */
+  TILE_CACHE = L.tileBufferCollection(m.getZoom());
+
+  /* reset tile buffer cache for each zoom level change */
+  m.on('zoomstart', function(e) {
+    TILE_CACHE.resetOnZoom(m.getZoom());
+  });
+
+  /* update overlay and redraw streets on zoom end event */
+  m.on('zoomend', function(e) {
+    updateOverlay();
+  });
+
+  /* draw initial distance map */
+  updateOverlay();
 }
+
+/* updates network graph based on travel time and zoom level */
+function updateOverlay() {
+
+  /* reset the scene */
+  TILE_CACHE.resetOnZoom(m.getZoom());
+  drawGL();
+
+//  /* get gltf tiles based on selected travel time */
+//  $.getJSON("http://deneb.cach.co/dump/jp2hfrvm/eci5/"
+//    + DEFAULT_TRAVEL_TIME + ".gltf", function(data) {
+//    var vtx = new Float32Array(data.buffers.vertices);
+//    var idx = new Uint16Array(data.buffers.indices);
+//    var clr = new Float32Array(data.buffers.colours);
+//    var tileBuffer = L.tileBuffer(vtx, idx, clr, {
+//      x: 0,
+//      y: 0,
+//      zoom: m.getZoom()
+//    });
+//    TILE_CACHE.addTile(tileBuffer);
 //
-///* updates network graph based on travel time and zoom level */
-//function updateOverlay() {
-//
-// /* reset the scene */
-// TILE_CACHE.resetOnZoom(m.getZoom());
-// drawGL();
-//
-// if (contextButtons.getValue() == 'gltf') {
-//
-//   /* get gltf tiles based on selected travel time */
-//   $.getJSON("http://deneb.cach.co/dump/jp2hfrvm/eci5/"
-//     + TRAVEL_TIME + ".gltf", function(data) {
-//     var vtx = new Float32Array(data.buffers.vertices);
-//     var idx = new Uint16Array(data.buffers.indices);
-//     var clr = new Float32Array(data.buffers.colours);
-//     var tileBuffer = L.tileBuffer(vtx, idx, clr, {
-// x: 0,
-// y: 0,
-// zoom: m.getZoom()
-//     });
-//     TILE_CACHE.addTile(tileBuffer);
-//
-//     /* draw the scene */
-//     drawGL();
-//   });
-// }
-//}
+//    /* draw the scene */
+//    drawGL();
+//  });
+}
 
 /**
 * initialize webgl context
@@ -206,7 +183,7 @@ function initShaders() {
 
   /* check shader linking */
   if (!gl.getProgramParameter(sp, gl.LINK_STATUS)) {
-    log("initShaders(): [ERR]: could not init shaders");
+    _log("initShaders(): [ERR]: could not init shaders");
   } else {
 
     /* use shader programm */
@@ -233,7 +210,7 @@ function getShader(id) {
   var shaderScript = document.getElementById(id);
 
   if (!shaderScript) {
-    log("getShader(id): [WRN]: shader not found");
+    _log("getShader(id): [WRN]: shader not found");
     return null;
   }
 
@@ -254,7 +231,7 @@ function getShader(id) {
     /* vertex shader */
     shader = gl.createShader(gl.VERTEX_SHADER);
   } else {
-    log("getShader(id): [WRN]: unknown shader type");
+    _log("getShader(id): [WRN]: unknown shader type");
     return null;
   }
 
@@ -263,8 +240,8 @@ function getShader(id) {
 
   /* check shader compile status */
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    log("getShader(id): [ERR]: shader failed to compile");
-    log(gl.getShaderInfoLog(shader));
+    _log("getShader(id): [ERR]: shader failed to compile");
+    _log(gl.getShaderInfoLog(shader));
     return null;
   }
 
@@ -370,74 +347,47 @@ function drawGL() {
 // }
 }
 
-///**
-//* helper: simple translation along x/y (2D)
-//*
-//* @param {Float32Array} m the output matrix to be translated
-//* @param {integer} x the translation factor along x
-//* @param {integer} y the translation factor along y
-//*/
-//function translateMatrix(m, x, y) {
-// m[12] += m[0] * x + m[4] * y;
-// m[13] += m[1] * x + m[5] * y;
-// m[14] += m[2] * x + m[6] * y;
-// m[15] += m[3] * x + m[7] * y;
-//}
-//
-///**
-//* helper: simple scaling along x/y (2D)
-//*
-//* @param {Float32Array} m the output matrix to be scaled
-//* @param {integer} x the scaling factor along x
-//* @param {integer} y the scaling factor along y
-//*/
-//function scaleMatrix(m, x, y) {
-// m[0] *= x;
-// m[1] *= x;
-// m[2] *= x;
-// m[3] *= x;
-// m[4] *= y;
-// m[5] *= y;
-// m[6] *= y;
-// m[7] *= y;
-//}
-//
-///**
-//* Converts spherical web mercator to tile pixel X/Y at zoom level 0
-//* for 256x256 tile size and inverts y coordinates. (EPSG: 3857)
-//*
-//* @param {L.point} p Leaflet point with web mercator coordinates
-//* @return {L.point} Leaflet point with tile pixel x and y corrdinates
-//*/
-//function mercatorToPixels(p)  {
-  //var pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / WORLD_PIXEL);
-  //var pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / -WORLD_PIXEL));
-// return L.point(pixelX, pixelY);
-//}
-//
-///**
-//* Converts latitude/longitude to tile pixel X/Y at zoom level 0
-//* for 256x256 tile size and inverts y coordinates. (EPSG: 4326)
-//*
-//* @param {L.point} p Leaflet point in EPSG:3857
-//* @return {L.point} Leaflet point with tile pixel x and y corrdinates
-//*/
-//function latLonToPixels(lat, lon) {
-// var sinLat = Math.sin(lat * Math.PI / 180.0);
-// var pixelX = ((lon + 180) / 360) * WORLD_PIXEL;
-  //var pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4)) * WORLD_PIXEL;
-// return L.point(pixelX, pixelY);
-//}
-//
-///**
-//* log to console with timestamps
-//*
-//* @param {string} s the string to log
-//*/
-//function log(s) {
-// var n = new Date().getTime() / 1000.0;
-// window.console.log('[' + n.toFixed(3) + '] ' + s);
-//}
+/**
+* helper: simple translation along x/y (2D)
+*
+* @param {Float32Array} m the output matrix to be translated
+* @param {integer} x the translation factor along x
+* @param {integer} y the translation factor along y
+*/
+function translateMatrix(m, x, y) {
+  m[12] += m[0] * x + m[4] * y;
+  m[13] += m[1] * x + m[5] * y;
+  m[14] += m[2] * x + m[6] * y;
+  m[15] += m[3] * x + m[7] * y;
+}
+
+/**
+* helper: simple scaling along x/y (2D)
+*
+* @param {Float32Array} m the output matrix to be scaled
+* @param {integer} x the scaling factor along x
+* @param {integer} y the scaling factor along y
+*/
+function scaleMatrix(m, x, y) {
+  m[0] *= x;
+  m[1] *= x;
+  m[2] *= x;
+  m[3] *= x;
+  m[4] *= y;
+  m[5] *= y;
+  m[6] *= y;
+  m[7] *= y;
+}
+
+/**
+* log to console with timestamps
+*
+* @param {string} s the string to log
+*/
+function _log(s) {
+  var n = new Date().getTime() / 1000.0;
+  window.console.log('[' + n.toFixed(3) + '] ' + s);
+}
 
 /**
 * throw webgl errors
