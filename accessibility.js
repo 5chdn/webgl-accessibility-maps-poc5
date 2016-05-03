@@ -11,30 +11,14 @@ var DEFAULT_ZOOM = 13;
 /* cache for all tile's vertex, index and color buffers */
 var TILE_CACHE;
 
-/* default travel time is 30 minutes */
-var DEFAULT_TRAVEL_TIME = 1800;
+/* default travel time is 10 minutes */
+var DEFAULT_TRAVEL_TIME = 600;
+var DEFAULT_TRAVEL_TYPE = 'car';
 
-/* some map geometries */
-//var EARTH_EQUATOR = 40075016.68557849;
-//var EARTH_RADIUS = 6378137.0;
-//var WORLD_PIXEL  = 256.0;
-/* var WORLD_PIXEL  = 1; // @TODO normalize this */
+var WORLD_PIXEL_SIZE = 256.0; /* = 1; // @TODO normalize this */
 
-//var COLOR_GRAD = [
-//   49.0 / 255.0,  54.0 / 255.0, 149.0 / 255.0,  /* #313695 */
-//   69.0 / 255.0, 117.0 / 255.0, 180.0 / 255.0,  /* #4575b4 */
-//  116.0 / 255.0, 173.0 / 255.0, 209.0 / 255.0,  /* #74add1 */
-//  171.0 / 255.0, 217.0 / 255.0, 233.0 / 255.0,  /* #abd9e9 */
-//  224.0 / 255.0, 243.0 / 255.0, 248.0 / 255.0,  /* #e0f3f8 */
-//  254.0 / 255.0, 224.0 / 255.0, 144.0 / 255.0,  /* #fee090 */
-//  253.0 / 255.0, 174.0 / 255.0,  97.0 / 255.0,  /* #fdae61 */
-//  244.0 / 255.0, 109.0 / 255.0,  67.0 / 255.0,  /* #f46d43 */
-//  215.0 / 255.0,  48.0 / 255.0,  39.0 / 255.0,  /* #d73027 */
-//  165.0 / 255.0,           0.0,  38.0 / 255.0   /* #a50026 */
-//];
-//
-
-//var travelTimeControl; //, contextButtons;
+/* travel time control slider (r360) */
+var travelTimeControl;
 
 /**
  * initialize the distance map visualization
@@ -100,10 +84,25 @@ function accessibility_map() {
     initValue : DEFAULT_TRAVEL_TIME / 60
   });
 
+  /* create webgl gltf tiles */
+  L.GltfTiles = L.GridLayer.extend({
+    createTile: function(coords, done) {
+      getGltfTiles(coords.x, coords.y, coords.z);
+    }
+  });
+  var gltfTiles = new L.GltfTiles({}).addTo(m);
+
+  /* redraw the scene after all tiles are loaded */
+  gltfTiles.on('load', function(e) {
+    _log("gltfTiles::on::load");
+    drawGL();
+  });
+
   /* update overlay on slider events */
   travelTimeControl.onSlideStop(function(){
     DEFAULT_TRAVEL_TIME = travelTimeControl.getMaxValue();
-    updateOverlay();
+    TILE_CACHE.resetOnZoom(m.getZoom());
+    gltfTiles.redraw();
   });
   travelTimeControl.addTo(m);
 
@@ -114,39 +113,7 @@ function accessibility_map() {
   m.on('zoomstart', function(e) {
     TILE_CACHE.resetOnZoom(m.getZoom());
   });
-
-  /* update overlay and redraw streets on zoom end event */
-  m.on('zoomend', function(e) {
-    updateOverlay();
-  });
-
-  /* draw initial distance map */
-  updateOverlay();
-}
-
-/* updates network graph based on travel time and zoom level */
-function updateOverlay() {
-
-  /* reset the scene */
-  TILE_CACHE.resetOnZoom(m.getZoom());
   drawGL();
-
-//  /* get gltf tiles based on selected travel time */
-//  $.getJSON("http://deneb.cach.co/dump/jp2hfrvm/eci5/"
-//    + DEFAULT_TRAVEL_TIME + ".gltf", function(data) {
-//    var vtx = new Float32Array(data.buffers.vertices);
-//    var idx = new Uint16Array(data.buffers.indices);
-//    var clr = new Float32Array(data.buffers.colours);
-//    var tileBuffer = L.tileBuffer(vtx, idx, clr, {
-//      x: 0,
-//      y: 0,
-//      zoom: m.getZoom()
-//    });
-//    TILE_CACHE.addTile(tileBuffer);
-//
-//    /* draw the scene */
-//    drawGL();
-//  });
 }
 
 /**
@@ -248,103 +215,156 @@ function getShader(id) {
   return shader;
 }
 
+function getGltfTiles(x, y, zoom) {
+
+  _log("getGltfTiles" + " " + x + " " + y + " " + zoom);
+
+  /* request tile from tiling server */
+  requestTile(x, y, zoom, function(response){
+
+    window.console.log(response);
+
+    var vtx = new Float32Array(response.tile.gltf.buffers.vertices);
+    var idx = new Uint16Array(response.tile.gltf.buffers.indices);
+    var clr = new Float32Array(response.tile.gltf.buffers.colours);
+
+    /* create a tile buffer object for the current tile */
+    var tileBuffer = L.tileBuffer(vtx, idx, clr, {
+      x: x,
+      y: y,
+      zoom: zoom
+    });
+
+    /* make sanity check on the tile buffer cache */
+    if (TILE_CACHE.getZoom() != zoom) {
+      TILE_CACHE.resetOnZoom(zoom);
+    }
+    /* add tile buffer geometries to the collection */
+    TILE_CACHE.addTile(tileBuffer);
+
+    /* redraw the scene */
+    drawGL();
+  });
+}
+
+/**
+ * Requests a tile from the r360 tiling server.
+ *
+ * @param (Integer) x the x coordinate of the tile
+ * @param (Integer) y the y coordinate of the tile
+ * @param (Integer) z the zoom factor of the tile
+ * @param (Function) callback a callback processing the tile
+ */
+function requestTile(x, y, z, callback) {
+  var travelOptions = r360.travelOptions();
+  travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
+  travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
+  travelOptions.addSource(CENTER_BERLIN); /* @TODO */
+  travelOptions.setMaxRoutingTime(DEFAULT_TRAVEL_TIME); /* @TODO */
+  travelOptions.setTravelType(DEFAULT_TRAVEL_TYPE); /* @TODO */
+  travelOptions.setX(x);
+  travelOptions.setY(y);
+  travelOptions.setZ(z);
+  r360.MobieService.getGraph(travelOptions, callback);
+}
+
 /**
 * draw all tiles from cache on the canvas overlay
 */
 function drawGL() {
 
-// /* only proceed if context is available */
-// if (gl) {
-//
-//   /* enable blending */
-//   gl.enable(gl.BLEND);
-//   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-//
-//   /* disable depth testing */
-//   gl.disable(gl.DEPTH_TEST);
-//
-//   /* clear color buffer for redraw */
-//   gl.clear(gl.COLOR_BUFFER_BIT);
-//
-//   /* set view port to canvas size */
-//   gl.viewport(0, 0, c.width, c.height);
-//
-    ///* get map bounds and top left corner used for webgl translation later */
-//   var bounds = m.getBounds();
-//   var topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
-//
-//   /* precalculate map scale, offset and line width */
-//   var zoom = m.getZoom();
-//   var scale = Math.pow(2, zoom);
-//   var offset = latLonToPixels(topLeft.lat, topLeft.lng);
-//   var width = Math.max(zoom - 12.0, 1.0);
-//
-//   /* define sizes of vertex and color buffer objects */
-//   var vtxSize = 2;
-//   var clrSize = 4;
-//
-//   /* define model view matrix. here: identity */
-//   var uMatrix = new Float32Array([
-//     1,0,0,0,
-//     0,1,0,0,
-//     0,0,1,0,
-//     0,0,0,1
-//   ]);
-//
-//   /* translate to move [0,0] to top left corner */
-//   translateMatrix(uMatrix, -1, 1);
-//
-//   /* scale based on canvas width and height */
-//   scaleMatrix(uMatrix, 2.0 / c.width, -2.0 / c.height);
-//
-//   /* scale based on map zoom scale */
-//   scaleMatrix(uMatrix, scale, scale);
-//
-//   /* translate offset to match current map position (lat/lon) */
-//   translateMatrix(uMatrix, -offset.x, -offset.y);
-//
-//   /* set model view */
-//   gl.uniformMatrix4fv(sp.uniformMatrix, false, uMatrix);
-//
-//   /* adjust line width based on zoom */
-//   gl.lineWidth(width);
-//
-//   /* loop all tile buffers in cache and draw each geometry */
-//   var tileBuffers = TILE_CACHE.getTileBufferCollection();
-//   for (var i = TILE_CACHE.getSize() - 1; i >= 0; i--) {
-//
-//     /* create vertex buffer */
-//     var vtxBuffer = gl.createBuffer();
-//     gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
-//     gl.bufferData(
-// gl.ARRAY_BUFFER,
-// tileBuffers[i].getVertexBuffer(),
-// gl.STATIC_DRAW
-//     );
-//     gl.vertexAttribPointer(
-// sp.vertexPosition,
-// vtxSize,
-// gl.FLOAT,
-// false,
-// 0,
-// 0
-//     );
-//
-//     /* create color buffer */
-//     var clrBuffer = gl.createBuffer();
-//     gl.bindBuffer(gl.ARRAY_BUFFER, clrBuffer);
-      //gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
-      //gl.vertexAttribPointer(sp.vertexColor, clrSize, gl.FLOAT, false, 0, 0);
-//
-//     /* create index buffer */
-//     var idxBuffer = gl.createBuffer();
-//     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
-      //gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
-//
-//     /* draw geometry lines by indices */
-      //gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
-//   }
-// }
+  /* only proceed if context is available */
+  if (gl) {
+
+    /* enable blending */
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    /* disable depth testing */
+    gl.disable(gl.DEPTH_TEST);
+
+    /* clear color buffer for redraw */
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    /* set view port to canvas size */
+    gl.viewport(0, 0, c.width, c.height);
+
+     /* get map bounds and top left corner used for webgl translation later */
+    var bounds = m.getBounds();
+    var topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
+
+    /* precalculate map scale, offset and line width */
+    var zoom = m.getZoom();
+    var scale = Math.pow(2, zoom);
+    var offset = latLonToPixels(topLeft.lat, topLeft.lng);
+    var width = Math.max(zoom - 12.0, 1.0);
+
+    /* define sizes of vertex and color buffer objects */
+    var vtxSize = 2;
+    var clrSize = 4;
+
+    /* define model view matrix. here: identity */
+    var uMatrix = new Float32Array([
+      1,0,0,0,
+      0,1,0,0,
+      0,0,1,0,
+      0,0,0,1
+    ]);
+
+    /* translate to move [0,0] to top left corner */
+    translateMatrix(uMatrix, -1, 1);
+
+    /* scale based on canvas width and height */
+    scaleMatrix(uMatrix, 2.0 / c.width, -2.0 / c.height);
+
+    /* scale based on map zoom scale */
+    scaleMatrix(uMatrix, scale, scale);
+
+    /* translate offset to match current map position (lat/lon) */
+    translateMatrix(uMatrix, -offset.x, -offset.y);
+
+    /* set model view */
+    gl.uniformMatrix4fv(sp.uniformMatrix, false, uMatrix);
+
+    /* adjust line width based on zoom */
+    gl.lineWidth(width);
+
+    /* loop all tile buffers in cache and draw each geometry */
+    var tileBuffers = TILE_CACHE.getTileBufferCollection();
+    for (var i = TILE_CACHE.getSize() - 1; i >= 0; i--) {
+
+      /* create vertex buffer */
+      var vtxBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        tileBuffers[i].getVertexBuffer(),
+        gl.STATIC_DRAW
+      );
+      gl.vertexAttribPointer(
+        sp.vertexPosition,
+        vtxSize,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
+
+      /* create color buffer */
+      var clrBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, clrBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(sp.vertexColor, clrSize, gl.FLOAT, false, 0, 0);
+
+      /* create index buffer */
+      var idxBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
+
+      /* draw geometry lines by indices */
+      gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
+    }
+  }
 }
 
 /**
@@ -377,6 +397,33 @@ function scaleMatrix(m, x, y) {
   m[5] *= y;
   m[6] *= y;
   m[7] *= y;
+}
+
+/**
+ * Converts spherical web mercator to tile pixel X/Y at zoom level 0
+ * for 256x256 tile size and inverts y coordinates. (EPSG: 3857)
+ *
+ * @param {L.point} p Leaflet point with web mercator coordinates
+ * @return {L.point} Leaflet point with tile pixel x and y corrdinates
+ */
+function mercatorToPixels(p)  {
+  var pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / WORLD_PIXEL_SIZE);
+  var pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / -WORLD_PIXEL_SIZE));
+  return L.point(pixelX, pixelY);
+}
+
+/**
+ * Converts latitude/longitude to tile pixel X/Y at zoom level 0
+ * for 256x256 tile size and inverts y coordinates. (EPSG: 4326)
+ *
+ * @param {L.point} p Leaflet point in EPSG:3857
+ * @return {L.point} Leaflet point with tile pixel x and y corrdinates
+ */
+function latLonToPixels(lat, lon) {
+  var sinLat = Math.sin(lat * Math.PI / 180.0);
+  var pixelX = ((lon + 180) / 360) * WORLD_PIXEL_SIZE;
+  var pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4)) * WORLD_PIXEL_SIZE;
+  return L.point(pixelX, pixelY);
 }
 
 /**
