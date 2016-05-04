@@ -13,11 +13,37 @@ var TILE_CACHE;
 
 /* default travel time is 10 minutes */
 var TRAVEL_TIME = 600;
+var TRAVEL_TIME_LIMIT = 3600;
 var TRAVEL_TYPE = 'car';
 
 /* travel time control slider (r360) */
 var travelTimeControl, travelTypeButtons;
 var startMarker;
+
+var COLOR_GRAD = [
+// 49.0 / 255.0,  54.0 / 255.0, 149.0 / 255.0,  /* #313695 */
+   59.0 / 255.0,  85.0 / 255.0, 164.0 / 255.0,  /* #3b55a4 */
+// 69.0 / 255.0, 117.0 / 255.0, 180.0 / 255.0,  /* #4575b4 */
+   92.0 / 255.0, 145.0 / 255.0, 194.0 / 255.0,  /* #5c91c2 */
+//116.0 / 255.0, 173.0 / 255.0, 209.0 / 255.0,  /* #74add1 */
+  143.0 / 255.0, 195.0 / 255.0, 221.0 / 255.0,  /* #8fc3dd */
+//171.0 / 255.0, 217.0 / 255.0, 233.0 / 255.0,  /* #abd9e9 */
+  197.0 / 255.0, 230.0 / 255.0, 240.0 / 255.0,  /* #c5e6f0 */
+//224.0 / 255.0, 243.0 / 255.0, 248.0 / 255.0,  /* #e0f3f8 */
+  239.0 / 255.0, 249.0 / 255.0, 219.0 / 255.0,  /* #eff9db */
+//254.0 / 255.0, 224.0 / 255.0, 144.0 / 255.0,  /* #fee090 */
+  254.0 / 255.0, 239.0 / 255.0, 167.0 / 255.0,  /* #feefa7 */
+//253.0 / 255.0, 174.0 / 255.0,  97.0 / 255.0,  /* #fdae61 */
+  253.0 / 255.0, 199.0 / 255.0, 120.0 / 255.0,  /* #fdc778 */
+  248.0 / 255.0, 141.0 / 255.0,  82.0 / 255.0,  /* #f88d52 */
+//244.0 / 255.0, 109.0 / 255.0,  67.0 / 255.0,  /* #f46d43 */
+  229.0 / 255.0,  78.0 / 255.0,  53.0 / 255.0,  /* #e54e35 */
+//215.0 / 255.0,  48.0 / 255.0,  39.0 / 255.0,  /* #d73027 */
+  190.0 / 255.0,  24.0 / 255.0,  38.0 / 255.0,  /* #be1826 */
+//165.0 / 255.0,           0.0,  38.0 / 255.0   /* #a50026 */
+  144.0 / 255.0,   0.0 / 255.0,  22.0 / 255.0,  /* #900016 */
+  102.0 / 255.0,   0.0 / 255.0,   0.0 / 255.0   /* #660000 */
+];
 
 /**
  * initialize the distance map visualization
@@ -265,6 +291,7 @@ function getGltfTiles(tile, zoom) {
 
 //////// @TODO find elegant solution for this //////////////////////////////////
       var clrSize = 4;
+      var tmpClr = [0.0, 0.0, 0.0, 0.0];
       var clr = new Float32Array(response.tile.gltf.buffers.times.length * clrSize);
       var green = {
         r : 255.0 / 255.0,
@@ -277,9 +304,35 @@ function getGltfTiles(tile, zoom) {
         b : 0.0   / 255.0
       }
       for (var i = 0; i < response.tile.gltf.buffers.times.length; i++) {
-        clr[i * clrSize]     = red.r + response.tile.gltf.buffers.times[i] * (green.r - red.r);
-        clr[i * clrSize + 1] = red.g + response.tile.gltf.buffers.times[i] * (green.g - red.g);
-        clr[i * clrSize + 2] = red.b + response.tile.gltf.buffers.times[i] * (green.b - red.b);
+        var clrTime = response.tile.gltf.buffers.times[i] * 60 * 60;
+        if        (clrTime > TRAVEL_TIME_LIMIT / 12.0 * 11.0) {
+          tmpClr = [COLOR_GRAD[11 * 3], COLOR_GRAD[11 * 3 + 1], COLOR_GRAD[11 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 * 10.0) {
+          tmpClr = [COLOR_GRAD[10 * 3], COLOR_GRAD[10 * 3 + 1], COLOR_GRAD[10 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 *  9.0) {
+          tmpClr = [COLOR_GRAD[ 9 * 3], COLOR_GRAD[ 9 * 3 + 1], COLOR_GRAD[ 9 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 *  8.0) {
+          tmpClr = [COLOR_GRAD[ 8 * 3], COLOR_GRAD[ 8 * 3 + 1], COLOR_GRAD[ 8 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 *  7.0) {
+          tmpClr = [COLOR_GRAD[ 7 * 3], COLOR_GRAD[ 7 * 3 + 1], COLOR_GRAD[ 7 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 *  6.0) {
+          tmpClr = [COLOR_GRAD[ 6 * 3], COLOR_GRAD[ 6 * 3 + 1], COLOR_GRAD[ 6 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 *  5.0) {
+          tmpClr = [COLOR_GRAD[ 5 * 3], COLOR_GRAD[ 5 * 3 + 1], COLOR_GRAD[ 5 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 *  4.0) {
+          tmpClr = [COLOR_GRAD[ 4 * 3], COLOR_GRAD[ 4 * 3 + 1], COLOR_GRAD[ 4 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 *  3.0) {
+          tmpClr = [COLOR_GRAD[ 3 * 3], COLOR_GRAD[ 3 * 3 + 1], COLOR_GRAD[ 3 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0 *  2.0) {
+          tmpClr = [COLOR_GRAD[ 2 * 3], COLOR_GRAD[ 2 * 3 + 1], COLOR_GRAD[ 2 * 3 + 2], 1.0];
+        } else if (clrTime > TRAVEL_TIME_LIMIT / 12.0       ) {
+          tmpClr = [COLOR_GRAD[     3], COLOR_GRAD[     3 + 1], COLOR_GRAD[     3 + 2], 1.0];
+        } else {
+          tmpClr = [COLOR_GRAD[     0], COLOR_GRAD[         1], COLOR_GRAD[         2], 1.0];
+        }
+        clr[i * clrSize]     = tmpClr[0];
+        clr[i * clrSize + 1] = tmpClr[1];
+        clr[i * clrSize + 2] = tmpClr[2];
         clr[i * clrSize + 3] = 1.0;
         if (response.tile.gltf.buffers.times[i] >= 1.0)
           clr[i * clrSize + 3] = 0.0;
