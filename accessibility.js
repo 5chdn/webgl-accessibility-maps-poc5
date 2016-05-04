@@ -5,18 +5,18 @@ var m, o, c;
 var gl, sp;
 
 /* global center berlin, default zoom */
-var CENTER_BERLIN = [52.516, 13.377];
+var DEFAULT_CENTER = [52.516, 13.377];
 var DEFAULT_ZOOM = 13;
 
 /* cache for all tile's vertex, index and color buffers */
 var TILE_CACHE;
 
 /* default travel time is 10 minutes */
-var DEFAULT_TRAVEL_TIME = 600;
-var DEFAULT_TRAVEL_TYPE = 'car';
+var TRAVEL_TIME = 600;
+var TRAVEL_TYPE = 'car';
 
 /* travel time control slider (r360) */
-var travelTimeControl;
+var travelTimeControl, travelTypeButtons;
 var startMarker;
 
 /**
@@ -30,12 +30,13 @@ function accessibility_map() {
     maxZoom: 21,
     maxBounds: L.latLngBounds(L.latLng(49.6, 6.0), L.latLng(54.8, 20.4)),
     noWrap: true,
-    continuousWorld: false
+    continuousWorld: false,
+    zoomControl: false
   });
 
   /* set viewport to berlin */
-  m.setView(CENTER_BERLIN, DEFAULT_ZOOM);
-  startMarker = L.marker(CENTER_BERLIN, { draggable : true }).addTo(m);
+  m.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  startMarker = L.marker(DEFAULT_CENTER, { draggable : true }).addTo(m);
 
   /* setup leaflet canvas webgl overlay */
   o = L.canvasOverlay().drawing(drawGL).addTo(m);
@@ -81,8 +82,38 @@ function accessibility_map() {
     unit      : ' min',
     position  : 'topright',
     label     : 'travel time',
-    initValue : DEFAULT_TRAVEL_TIME / 60
+    initValue : TRAVEL_TIME / 60
   });
+
+  travelTypeButtons = r360.radioButtonControl({
+    buttons: [
+      {
+        label: '<i class="fa fa-male"></i>  Walking',
+        key: 'walk',
+        tooltip: 'Walking speed is on average 5km/h',
+        checked: false
+      },
+      {
+        label: '<i class="fa fa-bicycle"></i> Cycling',
+        key: 'bike',
+        tooltip: 'Cycling speed is on average 15km/h',
+        checked: false
+      },
+      {
+        label: '<i class="fa fa-car"></i> Car',
+        key: 'car',
+        tooltip: 'Car speed is limited by speed limit',
+        checked: true
+      }
+    ]
+  });
+  travelTypeButtons.addTo(m);
+  travelTypeButtons.onChange(function(value){
+    TRAVEL_TYPE = travelTypeButtons.getValue();
+    TILE_CACHE.resetOnZoom(m.getZoom());
+    gltfTiles.redraw();
+  });
+  travelTypeButtons.setPosition('topleft');
 
   /* create webgl gltf tiles */
   var gltfTiles = L.tileLayer.canvas({async:false});
@@ -103,11 +134,12 @@ function accessibility_map() {
 
   /* update overlay on slider events */
   travelTimeControl.onSlideStop(function(){
-    DEFAULT_TRAVEL_TIME = travelTimeControl.getMaxValue();
+    TRAVEL_TIME = travelTimeControl.getMaxValue();
     TILE_CACHE.resetOnZoom(m.getZoom());
     gltfTiles.redraw();
   });
   travelTimeControl.addTo(m);
+  travelTimeControl.setPosition('topright');
 
   /* init cache for tile buffers for current zoom level */
   TILE_CACHE = L.tileBufferCollection(m.getZoom());
@@ -116,6 +148,9 @@ function accessibility_map() {
   m.on('zoomstart', function(e) {
     TILE_CACHE.resetOnZoom(m.getZoom());
   });
+
+  var zoomControl = L.control.zoom({ position: 'bottomright' });
+  zoomControl.addTo(m);
 }
 
 /**
@@ -286,8 +321,8 @@ function requestTile(x, y, z, callback) {
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
   travelOptions.addSource(startMarker);
-  travelOptions.setMaxRoutingTime(DEFAULT_TRAVEL_TIME); /* @TODO */
-  travelOptions.setTravelType(DEFAULT_TRAVEL_TYPE); /* @TODO */
+  travelOptions.setMaxRoutingTime(TRAVEL_TIME);
+  travelOptions.setTravelType(TRAVEL_TYPE);
   travelOptions.setX(x);
   travelOptions.setY(y);
   travelOptions.setZ(z);
