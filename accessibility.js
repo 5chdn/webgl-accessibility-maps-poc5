@@ -19,6 +19,7 @@ var WORLD_PIXEL_SIZE = 256.0; /* = 1; // @TODO normalize this */
 
 /* travel time control slider (r360) */
 var travelTimeControl;
+var startMarker;
 
 /**
  * initialize the distance map visualization
@@ -36,6 +37,7 @@ function accessibility_map() {
 
   /* set viewport to berlin */
   m.setView(CENTER_BERLIN, DEFAULT_ZOOM);
+  startMarker = L.marker(CENTER_BERLIN, { draggable : true }).addTo(m);
 
   /* setup leaflet canvas webgl overlay */
   o = L.canvasOverlay().drawing(drawGL).addTo(m);
@@ -85,17 +87,21 @@ function accessibility_map() {
   });
 
   /* create webgl gltf tiles */
-  L.GltfTiles = L.GridLayer.extend({
-    createTile: function(coords, done) {
-      getGltfTiles(coords.x, coords.y, coords.z);
-    }
+  var gltfTiles = L.tileLayer.canvas({async:false});
+  gltfTiles.drawTile = function(canvas, tile, zoom) {
+///    if (tile.x == 4400 && tile.y == 2686 && zoom == 13)
+    getGltfTiles(tile, zoom);
+  }
+  gltfTiles.addTo(m);
+
+  startMarker.on('dragend', function(){
+    TILE_CACHE.resetOnZoom(m.getZoom());
+    gltfTiles.redraw();
   });
-  var gltfTiles = new L.GltfTiles({}).addTo(m);
 
   /* redraw the scene after all tiles are loaded */
   gltfTiles.on('load', function(e) {
-    _log("gltfTiles::on::load");
-    drawGL();
+      drawGL();
   });
 
   /* update overlay on slider events */
@@ -113,7 +119,6 @@ function accessibility_map() {
   m.on('zoomstart', function(e) {
     TILE_CACHE.resetOnZoom(m.getZoom());
   });
-  drawGL();
 }
 
 /**
@@ -215,35 +220,44 @@ function getShader(id) {
   return shader;
 }
 
-function getGltfTiles(x, y, zoom) {
-
-  _log("getGltfTiles" + " " + x + " " + y + " " + zoom);
+function getGltfTiles(tile, zoom) {
 
   /* request tile from tiling server */
-  requestTile(x, y, zoom, function(response){
+  requestTile(tile.x, tile.y, zoom, function(response){
 
-    window.console.log(response);
+///    _log(tile.x + " " + tile.y + " " + zoom);
 
-    var vtx = new Float32Array(response.tile.gltf.buffers.vertices);
-    var idx = new Uint16Array(response.tile.gltf.buffers.indices);
-    var clr = new Float32Array(response.tile.gltf.buffers.colours);
+    if (response.tile.gltf.buffers.vertices.length > 0
+      && response.tile.gltf.buffers.indices.length > 0) {
 
-    /* create a tile buffer object for the current tile */
-    var tileBuffer = L.tileBuffer(vtx, idx, clr, {
-      x: x,
-      y: y,
-      zoom: zoom
-    });
+///      window.console.log(response.tile.gltf.buffers);
 
-    /* make sanity check on the tile buffer cache */
-    if (TILE_CACHE.getZoom() != zoom) {
-      TILE_CACHE.resetOnZoom(zoom);
+      var vtx = new Float32Array(response.tile.gltf.buffers.vertices);
+      var idx = new Uint16Array(response.tile.gltf.buffers.indices);
+      var clr = new Float32Array(response.tile.gltf.buffers.colors);
+
+///      window.console.log(vtx);
+///      window.console.log(idx);
+///      window.console.log(clr);
+
+      /* create a tile buffer object for the current tile */
+      var tileBuffer = L.tileBuffer(vtx, idx, clr, {
+        x: tile.x,
+        y: tile.y,
+        zoom: zoom
+      });
+
+      /* make sanity check on the tile buffer cache */
+      if (TILE_CACHE.getZoom() != zoom) {
+        TILE_CACHE.resetOnZoom(zoom);
+      }
+
+      /* add tile buffer geometries to the collection */
+      TILE_CACHE.addTile(tileBuffer);
+
+      /* redraw the scene */
+      drawGL();
     }
-    /* add tile buffer geometries to the collection */
-    TILE_CACHE.addTile(tileBuffer);
-
-    /* redraw the scene */
-    drawGL();
   });
 }
 
@@ -259,7 +273,7 @@ function requestTile(x, y, z, callback) {
   var travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
-  travelOptions.addSource(CENTER_BERLIN); /* @TODO */
+  travelOptions.addSource(startMarker);
   travelOptions.setMaxRoutingTime(DEFAULT_TRAVEL_TIME); /* @TODO */
   travelOptions.setTravelType(DEFAULT_TRAVEL_TYPE); /* @TODO */
   travelOptions.setX(x);
