@@ -15,8 +15,6 @@ var TILE_CACHE;
 var DEFAULT_TRAVEL_TIME = 600;
 var DEFAULT_TRAVEL_TYPE = 'car';
 
-var WORLD_PIXEL_SIZE = 256.0; /* = 1; // @TODO normalize this */
-
 /* travel time control slider (r360) */
 var travelTimeControl;
 var startMarker;
@@ -89,7 +87,6 @@ function accessibility_map() {
   /* create webgl gltf tiles */
   var gltfTiles = L.tileLayer.canvas({async:false});
   gltfTiles.drawTile = function(canvas, tile, zoom) {
-///    if (tile.x == 4400 && tile.y == 2686 && zoom == 13)
     getGltfTiles(tile, zoom);
   }
   gltfTiles.addTo(m);
@@ -225,20 +222,35 @@ function getGltfTiles(tile, zoom) {
   /* request tile from tiling server */
   requestTile(tile.x, tile.y, zoom, function(response){
 
-///    _log(tile.x + " " + tile.y + " " + zoom);
-
     if (response.tile.gltf.buffers.vertices.length > 0
       && response.tile.gltf.buffers.indices.length > 0) {
 
-///      window.console.log(response.tile.gltf.buffers);
-
       var vtx = new Float32Array(response.tile.gltf.buffers.vertices);
       var idx = new Uint16Array(response.tile.gltf.buffers.indices);
-      var clr = new Float32Array(response.tile.gltf.buffers.colors);
 
-///      window.console.log(vtx);
-///      window.console.log(idx);
-///      window.console.log(clr);
+//////// @TODO find elegant solution for this //////////////////////////////////
+      var clrSize = 4;
+      var clr = new Float32Array(response.tile.gltf.buffers.times.length * clrSize);
+      var green = {
+        r : 255.0 / 255.0,
+        g : 0.0   / 255.0,
+        b : 0.0   / 255.0
+      }
+      var red = {
+        r : 0.0   / 255.0,
+        g : 255.0 / 255.0,
+        b : 0.0   / 255.0
+      }
+      for (var i = 0; i < response.tile.gltf.buffers.times.length; i++) {
+        clr[i * clrSize]     = red.r + response.tile.gltf.buffers.times[i] * (green.r - red.r);
+        clr[i * clrSize + 1] = red.g + response.tile.gltf.buffers.times[i] * (green.g - red.g);
+        clr[i * clrSize + 2] = red.b + response.tile.gltf.buffers.times[i] * (green.b - red.b);
+        clr[i * clrSize + 3] = 1.0;
+        if (response.tile.gltf.buffers.times[i] >= 1.0)
+          clr[i * clrSize + 3] = 0.0;
+      };
+
+////////////////////////////////////////////////////////////////////////////////
 
       /* create a tile buffer object for the current tile */
       var tileBuffer = L.tileBuffer(vtx, idx, clr, {
@@ -309,7 +321,7 @@ function drawGL() {
 
     /* precalculate map scale, offset and line width */
     var zoom = m.getZoom();
-    var scale = Math.pow(2, zoom);
+    var scale = Math.pow(2, zoom) * 256.0;
     var offset = latLonToPixels(topLeft.lat, topLeft.lng);
     var width = Math.max(zoom - 12.0, 1.0);
 
@@ -421,8 +433,8 @@ function scaleMatrix(m, x, y) {
  * @return {L.point} Leaflet point with tile pixel x and y corrdinates
  */
 function mercatorToPixels(p)  {
-  var pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / WORLD_PIXEL_SIZE);
-  var pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / (EARTH_EQUATOR / -WORLD_PIXEL_SIZE));
+  var pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / EARTH_EQUATOR;
+  var pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / -EARTH_EQUATOR);
   return L.point(pixelX, pixelY);
 }
 
@@ -435,8 +447,8 @@ function mercatorToPixels(p)  {
  */
 function latLonToPixels(lat, lon) {
   var sinLat = Math.sin(lat * Math.PI / 180.0);
-  var pixelX = ((lon + 180) / 360) * WORLD_PIXEL_SIZE;
-  var pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4)) * WORLD_PIXEL_SIZE;
+  var pixelX = ((lon + 180) / 360);
+  var pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4));
   return L.point(pixelX, pixelY);
 }
 
