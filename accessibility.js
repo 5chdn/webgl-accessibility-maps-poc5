@@ -6,13 +6,13 @@ var gl, sp, gpu;
 
 /* global center berlin, default zoom */
 var DEFAULT_CENTER = [52.516, 13.377];
-var DEFAULT_ZOOM = 13;
+var DEFAULT_ZOOM = 12;
 
 /* cache for all tile's vertex, index and color buffers */
 var TILE_CACHE;
 
 /* default travel time is 10 minutes */
-var TRAVEL_TIME = 600;
+var TRAVEL_TIME = 1800;
 var TRAVEL_TIME_LIMIT = 3600;
 var TRAVEL_TYPE = 'car';
 
@@ -177,8 +177,11 @@ function accessibility_map() {
 
   /* update overlay on slider events */
   travelTimeControl.onSlideStop(function(){
+    recentTime = TRAVEL_TIME;
     TRAVEL_TIME = travelTimeControl.getMaxValue();
-    TILE_CACHE.resetOnZoom(m.getZoom());
+    if (recentTime > TRAVEL_TIME) {
+      TILE_CACHE.resetOnZoom(m.getZoom());
+    }
     gltfTiles.redraw();
   });
   travelTimeControl.addTo(m);
@@ -332,7 +335,7 @@ function getGltfTiles(tile, zoom) {
       }
 
       /* add tile buffer geometries to the collection */
-      TILE_CACHE.addTile(tileBuffer);
+      TILE_CACHE.updateTile(tileBuffer);
 
       /* redraw the scene */
       drawGL();
