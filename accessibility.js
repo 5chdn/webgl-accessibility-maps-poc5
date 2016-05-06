@@ -80,12 +80,12 @@ function accessibility_map() {
   initShaders();
 
   /* setup map with mapbox basemap tiles */
-  var tileLayerUrl =
+  let tileLayerUrl =
     'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png'
     + '?access_token={accessToken}';
-  var token =
+  let token =
     'pk.eyJ1IjoiZG9uc2Nob2UiLCJhIjoiMkN5RUk0QSJ9.FGcEYWjfgcJUmSyN1tkwgQ';
-  var mapboxTiles = L.tileLayer(tileLayerUrl, {
+  let mapboxTiles = L.tileLayer(tileLayerUrl, {
     attribution: 'WebGL/glTF Tiling PoC #5 | &copy; 2016 A. Schoedon',
     id: 'mapbox.dark',
     accessToken: token,
@@ -97,30 +97,30 @@ function accessibility_map() {
   /* use a r360 time slider to adjust travel time */
   travelTimeControl = r360.travelTimeControl({
     travelTimes: [
-      { time:  150, color: "#313695" },
-      { time:  300, color: "#3b55a4" },
-      { time:  450, color: "#4575b4" },
-      { time:  600, color: "#5c91c2" },
-      { time:  750, color: "#74add1" },
-      { time:  900, color: "#8fc3dd" },
-      { time: 1050, color: "#abd9e9" },
-      { time: 1200, color: "#c5e6f0" },
-      { time: 1350, color: "#e0f3f8" },
-      { time: 1500, color: "#eff9db" },
-      { time: 1650, color: "#ffffbf" },
-      { time: 1800, color: "#feefa7" },
-      { time: 1950, color: "#fee090" },
-      { time: 2100, color: "#fdc778" },
-      { time: 2250, color: "#fdae61" },
-      { time: 2400, color: "#f88d52" },
-      { time: 2550, color: "#f46d43" },
-      { time: 2700, color: "#e54e35" },
-      { time: 2850, color: "#d73027" },
-      { time: 3000, color: "#be1826" },
-      { time: 3150, color: "#a50026" },
-      { time: 3300, color: "#900016" },
-      { time: 3450, color: "#7b000b" },
-      { time: 3600, color: "#660000" }
+      { time:  150, color: rgbToHex([COLOR_GRAD[ 0], COLOR_GRAD[ 0+1], COLOR_GRAD[ 0+2]]) },
+      { time:  300, color: rgbToHex([COLOR_GRAD[ 3], COLOR_GRAD[ 3+1], COLOR_GRAD[ 3+2]]) },
+      { time:  450, color: rgbToHex([COLOR_GRAD[ 6], COLOR_GRAD[ 6+1], COLOR_GRAD[ 6+2]]) },
+      { time:  600, color: rgbToHex([COLOR_GRAD[ 9], COLOR_GRAD[ 9+1], COLOR_GRAD[ 9+2]]) },
+      { time:  750, color: rgbToHex([COLOR_GRAD[12], COLOR_GRAD[12+1], COLOR_GRAD[12+2]]) },
+      { time:  900, color: rgbToHex([COLOR_GRAD[15], COLOR_GRAD[15+1], COLOR_GRAD[15+2]]) },
+      { time: 1050, color: rgbToHex([COLOR_GRAD[18], COLOR_GRAD[18+1], COLOR_GRAD[18+2]]) },
+      { time: 1200, color: rgbToHex([COLOR_GRAD[21], COLOR_GRAD[21+1], COLOR_GRAD[21+2]]) },
+      { time: 1350, color: rgbToHex([COLOR_GRAD[24], COLOR_GRAD[24+1], COLOR_GRAD[24+2]]) },
+      { time: 1500, color: rgbToHex([COLOR_GRAD[27], COLOR_GRAD[27+1], COLOR_GRAD[27+2]]) },
+      { time: 1650, color: rgbToHex([COLOR_GRAD[30], COLOR_GRAD[30+1], COLOR_GRAD[30+2]]) },
+      { time: 1800, color: rgbToHex([COLOR_GRAD[33], COLOR_GRAD[33+1], COLOR_GRAD[33+2]]) },
+      { time: 1950, color: rgbToHex([COLOR_GRAD[36], COLOR_GRAD[36+1], COLOR_GRAD[36+2]]) },
+      { time: 2100, color: rgbToHex([COLOR_GRAD[39], COLOR_GRAD[39+1], COLOR_GRAD[39+2]]) },
+      { time: 2250, color: rgbToHex([COLOR_GRAD[42], COLOR_GRAD[42+1], COLOR_GRAD[42+2]]) },
+      { time: 2400, color: rgbToHex([COLOR_GRAD[45], COLOR_GRAD[45+1], COLOR_GRAD[45+2]]) },
+      { time: 2550, color: rgbToHex([COLOR_GRAD[48], COLOR_GRAD[48+1], COLOR_GRAD[48+2]]) },
+      { time: 2700, color: rgbToHex([COLOR_GRAD[51], COLOR_GRAD[51+1], COLOR_GRAD[51+2]]) },
+      { time: 2850, color: rgbToHex([COLOR_GRAD[54], COLOR_GRAD[54+1], COLOR_GRAD[54+2]]) },
+      { time: 3000, color: rgbToHex([COLOR_GRAD[57], COLOR_GRAD[57+1], COLOR_GRAD[57+2]]) },
+      { time: 3150, color: rgbToHex([COLOR_GRAD[60], COLOR_GRAD[60+1], COLOR_GRAD[60+2]]) },
+      { time: 3300, color: rgbToHex([COLOR_GRAD[63], COLOR_GRAD[63+1], COLOR_GRAD[63+2]]) },
+      { time: 3450, color: rgbToHex([COLOR_GRAD[66], COLOR_GRAD[66+1], COLOR_GRAD[66+2]]) },
+      { time: 3600, color: rgbToHex([COLOR_GRAD[69], COLOR_GRAD[69+1], COLOR_GRAD[69+2]]) }
     ],
     unit      : ' min',
     position  : 'topright',
@@ -159,7 +159,7 @@ function accessibility_map() {
   travelTypeButtons.setPosition('topleft');
 
   /* create webgl gltf tiles */
-  var gltfTiles = L.tileLayer.canvas({async:false});
+  let gltfTiles = L.tileLayer.canvas({async:false});
   gltfTiles.drawTile = function(canvas, tile, zoom) {
     getGltfTiles(tile, zoom);
   }
@@ -192,7 +192,7 @@ function accessibility_map() {
     TILE_CACHE.resetOnZoom(m.getZoom());
   });
 
-  var zoomControl = L.control.zoom({ position: 'bottomright' });
+  let zoomControl = L.control.zoom({ position: 'bottomright' });
   zoomControl.addTo(m);
 }
 
@@ -217,10 +217,10 @@ function initGL() {
 function initShaders() {
 
   /* vertex shader */
-  var vShader = getShader("shader-vtx");
+  let vShader = getShader("shader-vtx");
 
   /* fragment shader */
-  var fShader = getShader("shader-frg");
+  let fShader = getShader("shader-frg");
 
   /* shader program */
   sp = gl.createProgram();
@@ -253,16 +253,16 @@ function initShaders() {
 */
 function getShader(id) {
 
-  var shader;
-  var shaderScript = document.getElementById(id);
+  let shader;
+  let shaderScript = document.getElementById(id);
 
   if (!shaderScript) {
     _log("getShader(id): [WRN]: shader not found");
     return null;
   }
 
-  var str = "";
-  var k = shaderScript.firstChild;
+  let str = "";
+  let k = shaderScript.firstChild;
   while (k) {
     if (k.nodeType == 3)
       str += k.textContent;
@@ -303,15 +303,15 @@ function getGltfTiles(tile, zoom) {
     if (response.tile.gltf.buffers.vertices.length > 0
       && response.tile.gltf.buffers.indices.length > 0) {
 
-      var vtx = new Float32Array(response.tile.gltf.buffers.vertices);
-      var idx = new Uint16Array(response.tile.gltf.buffers.indices);
+      let vtx = new Float32Array(response.tile.gltf.buffers.vertices);
+      let idx = new Uint16Array(response.tile.gltf.buffers.indices);
 
       /* calculate the color ramp on the fly */
-      var clrSize = 4;
-      var tmpClr = [0.0, 0.0, 0.0, 0.0];
-      var clr = new Float32Array(response.tile.gltf.buffers.times.length * clrSize);
-      for (var i = 0; i < response.tile.gltf.buffers.times.length; i++) {
-        var tmpTime = response.tile.gltf.buffers.times[i] * TRAVEL_TIME;
+      let clrSize = 4;
+      let tmpClr = [0.0, 0.0, 0.0, 0.0];
+      let clr = new Float32Array(response.tile.gltf.buffers.times.length * clrSize);
+      for (let i = 0; i < response.tile.gltf.buffers.times.length; i++) {
+        let tmpTime = response.tile.gltf.buffers.times[i] * TRAVEL_TIME;
         tmpClr = pickColor(tmpTime);
         clr[i * clrSize]     = tmpClr[0];
         clr[i * clrSize + 1] = tmpClr[1];
@@ -320,7 +320,7 @@ function getGltfTiles(tile, zoom) {
       };
 
       /* create a tile buffer object for the current tile */
-      var tileBuffer = L.tileBuffer(vtx, idx, clr, {
+      let tileBuffer = L.tileBuffer(vtx, idx, clr, {
         x: tile.x,
         y: tile.y,
         zoom: zoom
@@ -349,7 +349,7 @@ function getGltfTiles(tile, zoom) {
  * @param (Function) callback a callback processing the tile
  */
 function requestTile(x, y, z, callback) {
-  var travelOptions = r360.travelOptions();
+  let travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
   travelOptions.addSource(startMarker);
@@ -362,8 +362,8 @@ function requestTile(x, y, z, callback) {
 }
 
 function pickColor(selectedTime) {
-  var alpha = 0.0;
-  var pickedColor = [0.0, 0.0, 0.0, alpha];
+  let alpha = 0.0;
+  let pickedColor = [0.0, 0.0, 0.0, alpha];
   if (selectedTime < TRAVEL_TIME) {
     alpha = 1.0;
   }
@@ -441,21 +441,21 @@ function drawGL() {
     gl.viewport(0, 0, c.width, c.height);
 
      /* get map bounds and top left corner used for webgl translation later */
-    var bounds = m.getBounds();
-    var topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
+    let bounds = m.getBounds();
+    let topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
 
     /* precalculate map scale, offset and line width */
-    var zoom = m.getZoom();
-    var scale = Math.pow(2, zoom) * 256.0;
-    var offset = latLonToPixels(topLeft.lat, topLeft.lng);
-    var width = Math.max(zoom - 12.0, 1.0);
+    let zoom = m.getZoom();
+    let scale = Math.pow(2, zoom) * 256.0;
+    let offset = latLonToPixels(topLeft.lat, topLeft.lng);
+    let width = Math.max(zoom - 12.0, 1.0);
 
     /* define sizes of vertex and color buffer objects */
-    var vtxSize = 2;
-    var clrSize = 4;
+    let vtxSize = 2;
+    let clrSize = 4;
 
     /* define model view matrix. here: identity */
-    var uMatrix = new Float32Array([
+    let uMatrix = new Float32Array([
       1,0,0,0,
       0,1,0,0,
       0,0,1,0,
@@ -481,11 +481,11 @@ function drawGL() {
     gl.lineWidth(width);
 
     /* loop all tile buffers in cache and draw each geometry */
-    var tileBuffers = TILE_CACHE.getTileBufferCollection();
-    for (var i = TILE_CACHE.getSize() - 1; i >= 0; i--) {
+    let tileBuffers = TILE_CACHE.getTileBufferCollection();
+    for (let i = TILE_CACHE.getSize() - 1; i >= 0; i--) {
 
       /* create vertex buffer */
-      var vtxBuffer = gl.createBuffer();
+      let vtxBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
       gl.bufferData(
         gl.ARRAY_BUFFER,
@@ -502,13 +502,13 @@ function drawGL() {
       );
 
       /* create color buffer */
-      var clrBuffer = gl.createBuffer();
+      let clrBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, clrBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
       gl.vertexAttribPointer(sp.vertexColor, clrSize, gl.FLOAT, false, 0, 0);
 
       /* create index buffer */
-      var idxBuffer = gl.createBuffer();
+      let idxBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
 
@@ -558,8 +558,8 @@ function scaleMatrix(m, x, y) {
  * @return {L.point} Leaflet point with tile pixel x and y corrdinates
  */
 function mercatorToPixels(p)  {
-  var pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / EARTH_EQUATOR;
-  var pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / -EARTH_EQUATOR);
+  let pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / EARTH_EQUATOR;
+  let pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / -EARTH_EQUATOR);
   return L.point(pixelX, pixelY);
 }
 
@@ -571,10 +571,18 @@ function mercatorToPixels(p)  {
  * @return {L.point} Leaflet point with tile pixel x and y corrdinates
  */
 function latLonToPixels(lat, lon) {
-  var sinLat = Math.sin(lat * Math.PI / 180.0);
-  var pixelX = ((lon + 180) / 360);
-  var pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4));
+  let sinLat = Math.sin(lat * Math.PI / 180.0);
+  let pixelX = ((lon + 180) / 360);
+  let pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4));
   return L.point(pixelX, pixelY);
+}
+
+function rgbToHex(rgb) {
+  let red = rgb[0] * 255;
+  let grn = rgb[1] * 255;
+  let blu = rgb[2] * 255;
+  let hex = blu | (grn << 8) | (red << 16);
+  return '#' + (0x1000000 + hex).toString(16).slice(1)
 }
 
 /**
@@ -583,7 +591,7 @@ function latLonToPixels(lat, lon) {
 * @param {string} s the string to log
 */
 function _log(s) {
-  var n = new Date().getTime() / 1000.0;
+  let n = new Date().getTime() / 1000.0;
   window.console.log('[' + n.toFixed(3) + '] ' + s);
 }
 
