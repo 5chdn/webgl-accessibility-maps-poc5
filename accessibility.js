@@ -5,14 +5,17 @@ var m, o, c;
 var gl, sp, gpu;
 
 /* global center berlin, default zoom */
-var DEFAULT_CENTER = [52.516, 13.377];
-var DEFAULT_ZOOM = 12;
+// var DEFAULT_CENTER = [52.516, 13.377];
+var DEFAULT_CENTER = [52.319026, 13.554639];
+// var DEFAULT_ZOOM = 12;
+var DEFAULT_ZOOM = 10;
 
 /* cache for all tile's vertex, index and color buffers */
 var TILE_CACHE;
 
 /* default travel time is 10 minutes */
-var TRAVEL_TIME = 1800;
+// var TRAVEL_TIME = 1800;
+var TRAVEL_TIME = 2400;
 var TRAVEL_TIME_LIMIT = 3600;
 var TRAVEL_TYPE = 'car';
 
