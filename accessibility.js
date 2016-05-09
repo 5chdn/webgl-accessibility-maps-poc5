@@ -67,7 +67,15 @@ function accessibility_map() {
 
   /* set viewport to berlin */
   m.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-  startMarker = L.marker(DEFAULT_CENTER, { draggable : true }).addTo(m);
+  var whiteIcon = L.icon({
+    iconUrl   : 'map-marker-point-64.png',
+    iconSize  : [32, 32],
+    iconAnchor: [16, 32],
+  });
+  startMarker = L.marker(DEFAULT_CENTER, {
+    draggable: true,
+    icon     : whiteIcon
+  }).addTo(m);
 
   /* setup leaflet canvas webgl overlay */
   o = L.canvasOverlay().drawing(drawGL).addTo(m);
@@ -555,7 +563,7 @@ function scaleMatrix(m, x, y) {
 
 /**
  * Converts spherical web mercator to tile pixel X/Y at zoom level 0
- * for 256x256 tile size and inverts y coordinates. (EPSG: 3857)
+ * for 1x1 tile size and inverts y coordinates. (EPSG: 3857)
  *
  * @param {L.point} p Leaflet point with web mercator coordinates
  * @return {L.point} Leaflet point with tile pixel x and y corrdinates
@@ -568,7 +576,7 @@ function mercatorToPixels(p)  {
 
 /**
  * Converts latitude/longitude to tile pixel X/Y at zoom level 0
- * for 256x256 tile size and inverts y coordinates. (EPSG: 4326)
+ * for 1x1 tile size and inverts y coordinates. (EPSG: 4326)
  *
  * @param {L.point} p Leaflet point in EPSG:3857
  * @return {L.point} Leaflet point with tile pixel x and y corrdinates
