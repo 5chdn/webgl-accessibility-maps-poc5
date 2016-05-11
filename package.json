@@ -1,0 +1,18 @@
+{
+  "name": "webgl-accessibility-maps-poc5",
+  "version": "0.0.5",
+  "description": " leaflet/r360/webgl accessibility maps proof of concept 5.",
+  "keywords": [
+    "webgl",
+    "leaflet",
+    "accessibility"
+  ],
+  "repository": "https://github.com/5chdn/webgl-accessibility-maps-poc5.git",
+  "homepage": "http://5chdn.github.io/webgl-accessibility-maps-poc5",
+  "author": "A. Schoedon <schoedon@uni-potsdam.de>",
+  "main": "index",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-util": "^3.0.7"
+  }
+}
