@@ -201,10 +201,10 @@ function accessibility_map() {
   /* init cache for tile buffers for current zoom level */
   TILE_CACHE = L.tileBufferCollection(m.getZoom());
 
-  /* reset tile buffer cache for each zoom level change */
-  m.on('zoomstart', function(e) {
-    TILE_CACHE.resetOnZoom(m.getZoom());
-  });
+//  /* reset tile buffer cache for each zoom level change */
+//  m.on('zoomstart', function(e) {
+//    TILE_CACHE.resetOnZoom(m.getZoom());
+//  });
 
   let zoomControl = L.control.zoom({ position: 'bottomright' });
   zoomControl.addTo(m);
@@ -311,8 +311,13 @@ function getShader(id) {
 
 function getGltfTiles(tile, zoom) {
 
+  window.console.log("getGltfTiles(zoom): " + zoom);
+
+
   /* request tile from tiling server */
   requestTile(tile.x, tile.y, zoom, function(response){
+
+    window.console.log("getGltfTiles(response.tile.gltf.zoom): " + response.tile.gltf.zoom);
 
     if (response.tile.gltf.buffers.vertices.length > 0
       && response.tile.gltf.buffers.indices.length > 0) {
@@ -340,10 +345,10 @@ function getGltfTiles(tile, zoom) {
         zoom: zoom
       });
 
-      /* make sanity check on the tile buffer cache */
-      if (TILE_CACHE.getZoom() != zoom) {
-        TILE_CACHE.resetOnZoom(zoom);
-      }
+//      /* make sanity check on the tile buffer cache */
+//      if (TILE_CACHE.getZoom() != zoom) {
+//        TILE_CACHE.resetOnZoom(zoom);
+//      }
 
       /* add tile buffer geometries to the collection */
       TILE_CACHE.updateTile(tileBuffer);
@@ -363,6 +368,7 @@ function getGltfTiles(tile, zoom) {
  * @param (Function) callback a callback processing the tile
  */
 function requestTile(x, y, z, callback) {
+  window.console.log("requestTile(x, y, z, callback): " + z);
   let travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
