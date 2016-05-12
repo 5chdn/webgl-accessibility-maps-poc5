@@ -1,62 +1,73 @@
-/* global leaflet map, overlay, canvas */
-var m, o, c;
+/*jshint esversion: 6 */
+/*jshint indent: 2 */
 
-/* global webgl context, shader program, processing unit */
-var gl, sp, gpu;
+/* leaflet map, overlay, canvas */
+let m;
+let o;
+let c;
 
-/* global center berlin, default zoom */
-// var DEFAULT_CENTER = [52.516, 13.377];
-var DEFAULT_CENTER = [52.319026, 13.554639];
-// var DEFAULT_ZOOM = 12;
-var DEFAULT_ZOOM = 10;
+/* webgl context, shader program, processing unit */
+let gl;
+let sp;
+// let gpu;
+
+/* center berlin, default zoom */
+// let DEFAULT_CENTER = [52.516, 13.377];
+const DEFAULT_CENTER = [52.319026, 13.554639];
+// let DEFAULT_ZOOM = 12;
+const DEFAULT_ZOOM = 10;
 
 /* cache for all tile's vertex, index and color buffers */
-var TILE_CACHE;
+let TILE_CACHE;
 
 /* default travel time is 10 minutes */
-// var TRAVEL_TIME = 1800;
-var TRAVEL_TIME = 2400;
-var TRAVEL_TIME_LIMIT = 3600;
-var TRAVEL_TYPE = 'car';
+// let TRAVEL_TIME = 1800;
+let TRAVEL_TIME = 2400;
+const TRAVEL_TIME_LIMIT = 3600;
+let TRAVEL_TYPE = 'car';
+// let EARTH_EQUATOR = 40075016.68557849;
 
 /* travel time control (r360) and a marker */
-var travelTimeControl, travelTypeButtons, colorControl;
-var startMarker;
+let travelTimeControl;
+let travelTypeButtons;
+// let colorControl;
+let startMarker;
 
-var COLOR_GRAD = [
-   49.0 / 255.0,  54.0 / 255.0, 149.0 / 255.0,  /* #313695 */
-   59.0 / 255.0,  85.0 / 255.0, 164.0 / 255.0,  /* #3b55a4 */
-   69.0 / 255.0, 117.0 / 255.0, 180.0 / 255.0,  /* #4575b4 */
-   92.0 / 255.0, 145.0 / 255.0, 194.0 / 255.0,  /* #5c91c2 */
+const COLOR_GRAD = [
+  49.0 / 255.0, 54.0 / 255.0, 149.0 / 255.0,  /* #313695 */
+  59.0 / 255.0,  85.0 / 255.0, 164.0 / 255.0,  /* #3b55a4 */
+  69.0 / 255.0, 117.0 / 255.0, 180.0 / 255.0,  /* #4575b4 */
+  92.0 / 255.0, 145.0 / 255.0, 194.0 / 255.0,  /* #5c91c2 */
   116.0 / 255.0, 173.0 / 255.0, 209.0 / 255.0,  /* #74add1 */
   143.0 / 255.0, 195.0 / 255.0, 221.0 / 255.0,  /* #8fc3dd */
   171.0 / 255.0, 217.0 / 255.0, 233.0 / 255.0,  /* #abd9e9 */
   197.0 / 255.0, 230.0 / 255.0, 240.0 / 255.0,  /* #c5e6f0 */
   224.0 / 255.0, 243.0 / 255.0, 248.0 / 255.0,  /* #e0f3f8 */
   239.0 / 255.0, 249.0 / 255.0, 219.0 / 255.0,  /* #eff9db */
-            1.0,           1.0, 191.0 / 255.0,  /* #ffffbf */
+  1.0, 1.0, 191.0 / 255.0,  /* #ffffbf */
   254.0 / 255.0, 239.0 / 255.0, 167.0 / 255.0,  /* #feefa7 */
   254.0 / 255.0, 224.0 / 255.0, 144.0 / 255.0,  /* #fee090 */
   253.0 / 255.0, 199.0 / 255.0, 120.0 / 255.0,  /* #fdc778 */
-  253.0 / 255.0, 174.0 / 255.0,  97.0 / 255.0,  /* #fdae61 */
-  248.0 / 255.0, 141.0 / 255.0,  82.0 / 255.0,  /* #f88d52 */
-  244.0 / 255.0, 109.0 / 255.0,  67.0 / 255.0,  /* #f46d43 */
-  229.0 / 255.0,  78.0 / 255.0,  53.0 / 255.0,  /* #e54e35 */
-  215.0 / 255.0,  48.0 / 255.0,  39.0 / 255.0,  /* #d73027 */
-  190.0 / 255.0,  24.0 / 255.0,  38.0 / 255.0,  /* #be1826 */
-  165.0 / 255.0,           0.0,  38.0 / 255.0,  /* #a50026 */
-  144.0 / 255.0,           0.0,  22.0 / 255.0,  /* #900016 */
-  123.0 / 255.0,           0.0,  11.0 / 255.0,  /* #7b000b */
-  102.0 / 255.0,           0.0,           0.0,  /* #660000 */
+  253.0 / 255.0, 174.0 / 255.0, 97.0 / 255.0,  /* #fdae61 */
+  248.0 / 255.0, 141.0 / 255.0, 82.0 / 255.0,  /* #f88d52 */
+  244.0 / 255.0, 109.0 / 255.0, 67.0 / 255.0,  /* #f46d43 */
+  229.0 / 255.0, 78.0 / 255.0, 53.0 / 255.0,  /* #e54e35 */
+  215.0 / 255.0, 48.0 / 255.0, 39.0 / 255.0,  /* #d73027 */
+  190.0 / 255.0, 24.0 / 255.0, 38.0 / 255.0,  /* #be1826 */
+  165.0 / 255.0, 0.0, 38.0 / 255.0,  /* #a50026 */
+  144.0 / 255.0, 0.0, 22.0 / 255.0,  /* #900016 */
+  123.0 / 255.0, 0.0, 11.0 / 255.0,  /* #7b000b */
+  102.0 / 255.0, 0.0, 0.0   /* #660000 */
 ];
 
 /**
  * initialize the distance map visualization
  */
 function accessibility_map() {
+  'use strict';
 
-  /* do heavy processing on gpu */
-  gpu = new GPU();
+// /* do heavy processing on gpu */
+// gpu = new GPU();
 
   /* leaflet map canvas */
   m = L.map('map', {
@@ -70,10 +81,10 @@ function accessibility_map() {
 
   /* set viewport to berlin */
   m.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-  var whiteIcon = L.icon({
+  let whiteIcon = L.icon({
     iconUrl   : 'map-marker-point-64.png',
     iconSize  : [32, 32],
-    iconAnchor: [16, 32],
+    iconAnchor: [16, 32]
   });
   startMarker = L.marker(DEFAULT_CENTER, {
     draggable: true,
@@ -81,8 +92,8 @@ function accessibility_map() {
   }).addTo(m);
 
   /* setup leaflet canvas webgl overlay */
-  o = L.canvasOverlay().drawing(drawGL).addTo(m);
-  c = o.canvas()
+  o = L.canvasOverlay().drawing(drawGL()).addTo(m);
+  c = o.canvas();
   o.canvas.width = c.clientWidth;
   o.canvas.height = c.clientHeight;
 
@@ -92,8 +103,8 @@ function accessibility_map() {
 
   /* setup map with mapbox basemap tiles */
   let tileLayerUrl =
-    'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png'
-    + '?access_token={accessToken}';
+    'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png' +
+      '?access_token={accessToken}';
   let token =
     'pk.eyJ1IjoiZG9uc2Nob2UiLCJhIjoiMkN5RUk0QSJ9.FGcEYWjfgcJUmSyN1tkwgQ';
   let mapboxTiles = L.tileLayer(tileLayerUrl, {
@@ -103,7 +114,8 @@ function accessibility_map() {
     noWrap: true,
     continuousWorld: false,
     attributionControl: false
-  }).addTo(m);
+  });
+  mapboxTiles.addTo(m);
 
   /* use a r360 time slider to adjust travel time */
   travelTimeControl = r360.travelTimeControl({
@@ -173,7 +185,7 @@ function accessibility_map() {
   let gltfTiles = L.tileLayer.canvas({async:false});
   gltfTiles.drawTile = function(canvas, tile, zoom) {
     getGltfTiles(tile, zoom);
-  }
+  };
   gltfTiles.addTo(m);
 
   startMarker.on('dragend', function(){
@@ -188,7 +200,7 @@ function accessibility_map() {
 
   /* update overlay on slider events */
   travelTimeControl.onSlideStop(function(){
-    recentTime = TRAVEL_TIME;
+    let recentTime = TRAVEL_TIME;
     TRAVEL_TIME = travelTimeControl.getMaxValue();
     if (recentTime > TRAVEL_TIME) {
       TILE_CACHE.resetOnZoom(m.getZoom());
@@ -201,10 +213,10 @@ function accessibility_map() {
   /* init cache for tile buffers for current zoom level */
   TILE_CACHE = L.tileBufferCollection(m.getZoom());
 
-  /* reset tile buffer cache for each zoom level change */
-  m.on('zoomstart', function(e) {
-    TILE_CACHE.resetOnZoom(m.getZoom());
-  });
+//  /* reset tile buffer cache for each zoom level change */
+//  m.on('zoomstart', function(e) {
+//    TILE_CACHE.resetOnZoom(m.getZoom());
+//  });
 
   let zoomControl = L.control.zoom({ position: 'bottomright' });
   zoomControl.addTo(m);
@@ -214,6 +226,7 @@ function accessibility_map() {
 * initialize webgl context
 */
 function initGL() {
+  'use strict';
 
   /* wrap webgl context in a debug context */
   gl = WebGLDebugUtils.makeDebugContext(
@@ -229,6 +242,7 @@ function initGL() {
 * init vertex/fragment shader and shader program
 */
 function initShaders() {
+  'use strict';
 
   /* vertex shader */
   let vShader = getShader("shader-vtx");
@@ -266,6 +280,7 @@ function initShaders() {
 * @return {object} the compiled shader
 */
 function getShader(id) {
+  'use strict';
 
   let shader;
   let shaderScript = document.getElementById(id);
@@ -278,8 +293,9 @@ function getShader(id) {
   let str = "";
   let k = shaderScript.firstChild;
   while (k) {
-    if (k.nodeType == 3)
+    if (k.nodeType == 3) {
       str += k.textContent;
+    }
     k = k.nextSibling;
   }
 
@@ -310,12 +326,18 @@ function getShader(id) {
 }
 
 function getGltfTiles(tile, zoom) {
+  'use strict';
+
+// window.console.log("getGltfTiles(zoom): " + zoom);
+
 
   /* request tile from tiling server */
   requestTile(tile.x, tile.y, zoom, function(response){
 
-    if (response.tile.gltf.buffers.vertices.length > 0
-      && response.tile.gltf.buffers.indices.length > 0) {
+//   window.console.log("getGltfTiles(response.tile.gltf.zoom): " + response.tile.gltf.zoom);
+
+    if (response.tile.gltf.buffers.vertices.length > 0 &&
+      response.tile.gltf.buffers.indices.length > 0) {
 
       let vtx = new Float32Array(response.tile.gltf.buffers.vertices);
       let idx = new Uint16Array(response.tile.gltf.buffers.indices);
@@ -324,14 +346,14 @@ function getGltfTiles(tile, zoom) {
       let clrSize = 4;
       let tmpClr = [0.0, 0.0, 0.0, 0.0];
       let clr = new Float32Array(response.tile.gltf.buffers.times.length * clrSize);
-      for (let i = 0; i < response.tile.gltf.buffers.times.length; i++) {
+      for (let i = 0; i < response.tile.gltf.buffers.times.length; i += 1) {
         let tmpTime = response.tile.gltf.buffers.times[i] * TRAVEL_TIME;
         tmpClr = pickColor(tmpTime);
         clr[i * clrSize]     = tmpClr[0];
         clr[i * clrSize + 1] = tmpClr[1];
         clr[i * clrSize + 2] = tmpClr[2];
         clr[i * clrSize + 3] = tmpClr[3];
-      };
+      }
 
       /* create a tile buffer object for the current tile */
       let tileBuffer = L.tileBuffer(vtx, idx, clr, {
@@ -340,10 +362,10 @@ function getGltfTiles(tile, zoom) {
         zoom: zoom
       });
 
-      /* make sanity check on the tile buffer cache */
-      if (TILE_CACHE.getZoom() != zoom) {
-        TILE_CACHE.resetOnZoom(zoom);
-      }
+//      /* make sanity check on the tile buffer cache */
+//      if (TILE_CACHE.getZoom() != zoom) {
+//        TILE_CACHE.resetOnZoom(zoom);
+//      }
 
       /* add tile buffer geometries to the collection */
       TILE_CACHE.updateTile(tileBuffer);
@@ -363,6 +385,9 @@ function getGltfTiles(tile, zoom) {
  * @param (Function) callback a callback processing the tile
  */
 function requestTile(x, y, z, callback) {
+  'use strict';
+
+// window.console.log("requestTile(x, y, z, callback): " + z);
   let travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
@@ -376,6 +401,8 @@ function requestTile(x, y, z, callback) {
 }
 
 function pickColor(selectedTime) {
+  'use strict';
+
   let alpha = 0.0;
   let pickedColor = [0.0, 0.0, 0.0, alpha];
   if (selectedTime < TRAVEL_TIME) {
@@ -437,6 +464,7 @@ function pickColor(selectedTime) {
 * draw all tiles from cache on the canvas overlay
 */
 function drawGL() {
+  'use strict';
 
   /* only proceed if context is available */
   if (gl) {
@@ -496,7 +524,7 @@ function drawGL() {
 
     /* loop all tile buffers in cache and draw each geometry */
     let tileBuffers = TILE_CACHE.getTileBufferCollection();
-    for (let i = TILE_CACHE.getSize() - 1; i >= 0; i--) {
+    for (let i = TILE_CACHE.getSize() - 1; i >= 0; i -= 1) {
 
       /* create vertex buffer */
       let vtxBuffer = gl.createBuffer();
@@ -564,18 +592,18 @@ function scaleMatrix(m, x, y) {
   m[7] *= y;
 }
 
-/**
- * Converts spherical web mercator to tile pixel X/Y at zoom level 0
- * for 1x1 tile size and inverts y coordinates. (EPSG: 3857)
- *
- * @param {L.point} p Leaflet point with web mercator coordinates
- * @return {L.point} Leaflet point with tile pixel x and y corrdinates
- */
-function mercatorToPixels(p)  {
-  let pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / EARTH_EQUATOR;
-  let pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / -EARTH_EQUATOR);
-  return L.point(pixelX, pixelY);
-}
+// /**
+//  * Converts spherical web mercator to tile pixel X/Y at zoom level 0
+//  * for 1x1 tile size and inverts y coordinates. (EPSG: 3857)
+//  *
+//  * @param {L.point} p Leaflet point with web mercator coordinates
+//  * @return {L.point} Leaflet point with tile pixel x and y corrdinates
+//  */
+// function mercatorToPixels(p)  {
+//   let pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / EARTH_EQUATOR;
+//   let pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / -EARTH_EQUATOR);
+//   return L.point(pixelX, pixelY);
+// }
 
 /**
  * Converts latitude/longitude to tile pixel X/Y at zoom level 0
@@ -596,7 +624,7 @@ function rgbToHex(rgb) {
   let grn = rgb[1] * 255;
   let blu = rgb[2] * 255;
   let hex = blu | (grn << 8) | (red << 16);
-  return '#' + (0x1000000 + hex).toString(16).slice(1)
+  return '#' + (0x1000000 + hex).toString(16).slice(1);
 }
 
 /**
@@ -619,4 +647,4 @@ function _log(s) {
 */
 function throwOnGLError(e, f, args) {
   throw WebGLDebugUtils.glEnumToString(e) + " was caused by call to " + f;
-};
+}
