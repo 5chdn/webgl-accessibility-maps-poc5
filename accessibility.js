@@ -213,10 +213,10 @@ function accessibility_map() {
   /* init cache for tile buffers for current zoom level */
   TILE_CACHE = L.tileBufferCollection(m.getZoom());
 
-//  /* reset tile buffer cache for each zoom level change */
-//  m.on('zoomstart', function(e) {
-//    TILE_CACHE.resetOnZoom(m.getZoom());
-//  });
+  /* reset tile buffer cache for each zoom level change */
+  m.on('zoomstart', function(e) {
+    TILE_CACHE.resetOnZoom(m.getZoom());
+  });
 
   let zoomControl = L.control.zoom({ position: 'bottomright' });
   zoomControl.addTo(m);
@@ -362,10 +362,10 @@ function getGltfTiles(tile, zoom) {
         zoom: zoom
       });
 
-//      /* make sanity check on the tile buffer cache */
-//      if (TILE_CACHE.getZoom() != zoom) {
-//        TILE_CACHE.resetOnZoom(zoom);
-//      }
+      /* make sanity check on the tile buffer cache */
+      if (TILE_CACHE.getZoom() != zoom) {
+        TILE_CACHE.resetOnZoom(zoom);
+      }
 
       /* add tile buffer geometries to the collection */
       TILE_CACHE.updateTile(tileBuffer);
