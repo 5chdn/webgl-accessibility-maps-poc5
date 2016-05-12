@@ -164,7 +164,7 @@ function accessibility_map() {
   travelTypeButtons.addTo(m);
   travelTypeButtons.onChange(function(value){
     TRAVEL_TYPE = travelTypeButtons.getValue();
-    TILE_CACHE.resetOnZoom(m.getZoom());
+    TILE_CACHE.resetHard();
     gltfTiles.redraw();
   });
   travelTypeButtons.setPosition('topleft');
@@ -177,7 +177,7 @@ function accessibility_map() {
   gltfTiles.addTo(m);
 
   startMarker.on('dragend', function(){
-    TILE_CACHE.resetOnZoom(m.getZoom());
+    TILE_CACHE.resetHard();
     gltfTiles.redraw();
   });
 
@@ -191,7 +191,7 @@ function accessibility_map() {
     recentTime = TRAVEL_TIME;
     TRAVEL_TIME = travelTimeControl.getMaxValue();
     if (recentTime > TRAVEL_TIME) {
-      TILE_CACHE.resetOnZoom(m.getZoom());
+      TILE_CACHE.resetHard();
     }
     gltfTiles.redraw();
   });
