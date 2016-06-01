@@ -53,24 +53,22 @@
     <!-- shaders -->
     <script type="x-shader/x-vertex" id="shader-vtx">
       uniform mat4 u_matrix;
-
       attribute vec3 a_vertex;
-      attribute vec4 a_color;
-
-      varying vec4 v_color;
+      attribute float a_coord;
+      varying float v_coord;
 
       void main(void) {
         gl_Position = u_matrix * vec4(a_vertex, 1.0);
-        v_color = a_color;
+        v_coord = a_coord;
       }
     </script>
     <script type="x-shader/x-fragment" id="shader-frg">
-      precision mediump float;
-
-      varying vec4 v_color;
+      precision highp float;
+      uniform sampler2D u_texture;
+      varying float v_coord;
 
       void main(void) {
-        gl_FragColor = v_color;
+        gl_FragColor = texture2D(u_texture, vec2(v_coord, 0.5));
       }
     </script>
   </head>
