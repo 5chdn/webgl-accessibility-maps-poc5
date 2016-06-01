@@ -68,7 +68,11 @@
       varying float v_coord;
 
       void main(void) {
-        gl_FragColor = texture2D(u_texture, vec2(v_coord, 0.5));
+        if (v_coord < 1.0) {
+          gl_FragColor = texture2D(u_texture, vec2(v_coord, 0.5));
+        } else {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); /* hide unreachable roads */
+        }
       }
     </script>
   </head>

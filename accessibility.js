@@ -9,28 +9,24 @@ let c;
 /* webgl context, shader program, processing unit */
 let gl;
 let sp;
-// let gpu;
 
 /* center berlin, default zoom */
-// let DEFAULT_CENTER = [52.516, 13.377];
-const DEFAULT_CENTER = [52.319026, 13.554639];
-// let DEFAULT_ZOOM = 12;
-const DEFAULT_ZOOM = 10;
+const DEFAULT_CENTER = [52.516, 13.377];
+const DEFAULT_ZOOM = 12;
 
 /* cache for all tile's vertex, index and color buffers */
 let TILE_CACHE;
 
-/* default travel time is 10 minutes */
-// let TRAVEL_TIME = 1800;
-let TRAVEL_TIME = 2400;
+/* default travel time is 30 minutes */
+let TRAVEL_TIME = 1800;
 const TRAVEL_TIME_LIMIT = 3600;
 let TRAVEL_TYPE = 'car';
-// let EARTH_EQUATOR = 40075016.68557849;
 
 /* travel time control (r360) and a marker */
 let travelTimeControl;
 let travelTypeButtons;
 let startMarker;
+let textureImage = new Image();
 
 const COLOR_GRAD = [
   49.0, 54.0, 149.0, 255.0, /* #313695 */
@@ -66,8 +62,7 @@ const COLOR_GRAD = [
 function accessibility_map() {
   'use strict';
 
-// /* do heavy processing on gpu */
-// gpu = new GPU();
+  textureImage.src = "img/blue-white-red.png";
 
   /* leaflet map canvas */
   m = L.map('map', {
@@ -82,7 +77,7 @@ function accessibility_map() {
   /* set viewport to berlin */
   m.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   let whiteIcon = L.icon({
-    iconUrl   : 'map-marker-point-64.png',
+    iconUrl   : 'img/map-marker-point-64.png',
     iconSize  : [32, 32],
     iconAnchor: [16, 32]
   });
@@ -431,18 +426,13 @@ function drawGL() {
     /* generate texture from color gradient */
     let texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    let texLevel = 0;
-    let texWidth = 25;
-    let texHeight = 1;
-    let texData = new Uint8Array(COLOR_GRAD);
-    gl.texImage2D(gl.TEXTURE_2D, texLevel, gl.RGBA, texWidth, texHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, texData);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
     let texUnit = 5;
     gl.activeTexture(gl.TEXTURE0 + texUnit);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.uniform1i(sp.textureRamp, texUnit);
 
     /* translate to move [0,0] to top left corner */
@@ -532,19 +522,6 @@ function scaleMatrix(m, x, y) {
   m[6] *= y;
   m[7] *= y;
 }
-
-// /**
-//  * Converts spherical web mercator to tile pixel X/Y at zoom level 0
-//  * for 1x1 tile size and inverts y coordinates. (EPSG: 3857)
-//  *
-//  * @param {L.point} p Leaflet point with web mercator coordinates
-//  * @return {L.point} Leaflet point with tile pixel x and y corrdinates
-//  */
-// function mercatorToPixels(p)  {
-//   let pixelX = (p.x + (EARTH_EQUATOR / 2.0)) / EARTH_EQUATOR;
-//   let pixelY = ((p.y - (EARTH_EQUATOR / 2.0)) / -EARTH_EQUATOR);
-//   return L.point(pixelX, pixelY);
-// }
 
 /**
  * Converts latitude/longitude to tile pixel X/Y at zoom level 0
