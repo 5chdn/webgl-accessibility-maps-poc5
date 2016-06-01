@@ -30,34 +30,34 @@ let TRAVEL_TYPE = 'car';
 /* travel time control (r360) and a marker */
 let travelTimeControl;
 let travelTypeButtons;
-// let colorControl;
 let startMarker;
 
 const COLOR_GRAD = [
-  49.0 / 255.0, 54.0 / 255.0, 149.0 / 255.0,  /* #313695 */
-  59.0 / 255.0,  85.0 / 255.0, 164.0 / 255.0,  /* #3b55a4 */
-  69.0 / 255.0, 117.0 / 255.0, 180.0 / 255.0,  /* #4575b4 */
-  92.0 / 255.0, 145.0 / 255.0, 194.0 / 255.0,  /* #5c91c2 */
-  116.0 / 255.0, 173.0 / 255.0, 209.0 / 255.0,  /* #74add1 */
-  143.0 / 255.0, 195.0 / 255.0, 221.0 / 255.0,  /* #8fc3dd */
-  171.0 / 255.0, 217.0 / 255.0, 233.0 / 255.0,  /* #abd9e9 */
-  197.0 / 255.0, 230.0 / 255.0, 240.0 / 255.0,  /* #c5e6f0 */
-  224.0 / 255.0, 243.0 / 255.0, 248.0 / 255.0,  /* #e0f3f8 */
-  239.0 / 255.0, 249.0 / 255.0, 219.0 / 255.0,  /* #eff9db */
-  1.0, 1.0, 191.0 / 255.0,  /* #ffffbf */
-  254.0 / 255.0, 239.0 / 255.0, 167.0 / 255.0,  /* #feefa7 */
-  254.0 / 255.0, 224.0 / 255.0, 144.0 / 255.0,  /* #fee090 */
-  253.0 / 255.0, 199.0 / 255.0, 120.0 / 255.0,  /* #fdc778 */
-  253.0 / 255.0, 174.0 / 255.0, 97.0 / 255.0,  /* #fdae61 */
-  248.0 / 255.0, 141.0 / 255.0, 82.0 / 255.0,  /* #f88d52 */
-  244.0 / 255.0, 109.0 / 255.0, 67.0 / 255.0,  /* #f46d43 */
-  229.0 / 255.0, 78.0 / 255.0, 53.0 / 255.0,  /* #e54e35 */
-  215.0 / 255.0, 48.0 / 255.0, 39.0 / 255.0,  /* #d73027 */
-  190.0 / 255.0, 24.0 / 255.0, 38.0 / 255.0,  /* #be1826 */
-  165.0 / 255.0, 0.0, 38.0 / 255.0,  /* #a50026 */
-  144.0 / 255.0, 0.0, 22.0 / 255.0,  /* #900016 */
-  123.0 / 255.0, 0.0, 11.0 / 255.0,  /* #7b000b */
-  102.0 / 255.0, 0.0, 0.0   /* #660000 */
+  49.0, 54.0, 149.0, 255.0, /* #313695 */
+  59.0,  85.0, 164.0, 255.0, /* #3b55a4 */
+  69.0, 117.0, 180.0, 255.0, /* #4575b4 */
+  92.0, 145.0, 194.0, 255.0, /* #5c91c2 */
+  116.0, 173.0, 209.0, 255.0, /* #74add1 */
+  143.0, 195.0, 221.0, 255.0, /* #8fc3dd */
+  171.0, 217.0, 233.0, 255.0, /* #abd9e9 */
+  197.0, 230.0, 240.0, 255.0, /* #c5e6f0 */
+  224.0, 243.0, 248.0, 255.0, /* #e0f3f8 */
+  239.0, 249.0, 219.0, 255.0, /* #eff9db */
+  255.0, 255.0, 191.0, 255.0, /* #ffffbf */
+  254.0, 239.0, 167.0, 255.0, /* #feefa7 */
+  254.0, 224.0, 144.0, 255.0, /* #fee090 */
+  253.0, 199.0, 120.0, 255.0, /* #fdc778 */
+  253.0, 174.0, 97.0, 255.0, /* #fdae61 */
+  248.0, 141.0, 82.0, 255.0, /* #f88d52 */
+  244.0, 109.0, 67.0, 255.0, /* #f46d43 */
+  229.0, 78.0, 53.0, 255.0, /* #e54e35 */
+  215.0, 48.0, 39.0, 255.0, /* #d73027 */
+  190.0, 24.0, 38.0, 255.0, /* #be1826 */
+  165.0, 0.0, 38.0, 255.0, /* #a50026 */
+  144.0, 0.0, 22.0, 255.0, /* #900016 */
+  123.0, 0.0, 11.0, 255.0, /* #7b000b */
+  102.0, 0.0, 0.0, 255.0, /* #660000 */
+  0.0, 0.0, 0.0, 0.0 /* hidden */
 ];
 
 /**
@@ -120,30 +120,30 @@ function accessibility_map() {
   /* use a r360 time slider to adjust travel time */
   travelTimeControl = r360.travelTimeControl({
     travelTimes: [
-      { time:  150, color: rgbToHex([COLOR_GRAD[ 0], COLOR_GRAD[ 0+1], COLOR_GRAD[ 0+2]]) },
-      { time:  300, color: rgbToHex([COLOR_GRAD[ 3], COLOR_GRAD[ 3+1], COLOR_GRAD[ 3+2]]) },
-      { time:  450, color: rgbToHex([COLOR_GRAD[ 6], COLOR_GRAD[ 6+1], COLOR_GRAD[ 6+2]]) },
-      { time:  600, color: rgbToHex([COLOR_GRAD[ 9], COLOR_GRAD[ 9+1], COLOR_GRAD[ 9+2]]) },
-      { time:  750, color: rgbToHex([COLOR_GRAD[12], COLOR_GRAD[12+1], COLOR_GRAD[12+2]]) },
-      { time:  900, color: rgbToHex([COLOR_GRAD[15], COLOR_GRAD[15+1], COLOR_GRAD[15+2]]) },
-      { time: 1050, color: rgbToHex([COLOR_GRAD[18], COLOR_GRAD[18+1], COLOR_GRAD[18+2]]) },
-      { time: 1200, color: rgbToHex([COLOR_GRAD[21], COLOR_GRAD[21+1], COLOR_GRAD[21+2]]) },
-      { time: 1350, color: rgbToHex([COLOR_GRAD[24], COLOR_GRAD[24+1], COLOR_GRAD[24+2]]) },
-      { time: 1500, color: rgbToHex([COLOR_GRAD[27], COLOR_GRAD[27+1], COLOR_GRAD[27+2]]) },
-      { time: 1650, color: rgbToHex([COLOR_GRAD[30], COLOR_GRAD[30+1], COLOR_GRAD[30+2]]) },
-      { time: 1800, color: rgbToHex([COLOR_GRAD[33], COLOR_GRAD[33+1], COLOR_GRAD[33+2]]) },
-      { time: 1950, color: rgbToHex([COLOR_GRAD[36], COLOR_GRAD[36+1], COLOR_GRAD[36+2]]) },
-      { time: 2100, color: rgbToHex([COLOR_GRAD[39], COLOR_GRAD[39+1], COLOR_GRAD[39+2]]) },
-      { time: 2250, color: rgbToHex([COLOR_GRAD[42], COLOR_GRAD[42+1], COLOR_GRAD[42+2]]) },
-      { time: 2400, color: rgbToHex([COLOR_GRAD[45], COLOR_GRAD[45+1], COLOR_GRAD[45+2]]) },
-      { time: 2550, color: rgbToHex([COLOR_GRAD[48], COLOR_GRAD[48+1], COLOR_GRAD[48+2]]) },
-      { time: 2700, color: rgbToHex([COLOR_GRAD[51], COLOR_GRAD[51+1], COLOR_GRAD[51+2]]) },
-      { time: 2850, color: rgbToHex([COLOR_GRAD[54], COLOR_GRAD[54+1], COLOR_GRAD[54+2]]) },
-      { time: 3000, color: rgbToHex([COLOR_GRAD[57], COLOR_GRAD[57+1], COLOR_GRAD[57+2]]) },
-      { time: 3150, color: rgbToHex([COLOR_GRAD[60], COLOR_GRAD[60+1], COLOR_GRAD[60+2]]) },
-      { time: 3300, color: rgbToHex([COLOR_GRAD[63], COLOR_GRAD[63+1], COLOR_GRAD[63+2]]) },
-      { time: 3450, color: rgbToHex([COLOR_GRAD[66], COLOR_GRAD[66+1], COLOR_GRAD[66+2]]) },
-      { time: 3600, color: rgbToHex([COLOR_GRAD[69], COLOR_GRAD[69+1], COLOR_GRAD[69+2]]) }
+      { time:  150, color: rgbToHex([COLOR_GRAD[ 0], COLOR_GRAD[ 1], COLOR_GRAD[ 2]]) },
+      { time:  300, color: rgbToHex([COLOR_GRAD[ 4], COLOR_GRAD[ 5], COLOR_GRAD[ 6]]) },
+      { time:  450, color: rgbToHex([COLOR_GRAD[ 8], COLOR_GRAD[ 9], COLOR_GRAD[10]]) },
+      { time:  600, color: rgbToHex([COLOR_GRAD[12], COLOR_GRAD[13], COLOR_GRAD[14]]) },
+      { time:  750, color: rgbToHex([COLOR_GRAD[16], COLOR_GRAD[17], COLOR_GRAD[18]]) },
+      { time:  900, color: rgbToHex([COLOR_GRAD[20], COLOR_GRAD[21], COLOR_GRAD[22]]) },
+      { time: 1050, color: rgbToHex([COLOR_GRAD[24], COLOR_GRAD[25], COLOR_GRAD[26]]) },
+      { time: 1200, color: rgbToHex([COLOR_GRAD[28], COLOR_GRAD[29], COLOR_GRAD[30]]) },
+      { time: 1350, color: rgbToHex([COLOR_GRAD[32], COLOR_GRAD[33], COLOR_GRAD[34]]) },
+      { time: 1500, color: rgbToHex([COLOR_GRAD[36], COLOR_GRAD[37], COLOR_GRAD[38]]) },
+      { time: 1650, color: rgbToHex([COLOR_GRAD[40], COLOR_GRAD[41], COLOR_GRAD[42]]) },
+      { time: 1800, color: rgbToHex([COLOR_GRAD[44], COLOR_GRAD[45], COLOR_GRAD[46]]) },
+      { time: 1950, color: rgbToHex([COLOR_GRAD[48], COLOR_GRAD[49], COLOR_GRAD[50]]) },
+      { time: 2100, color: rgbToHex([COLOR_GRAD[52], COLOR_GRAD[53], COLOR_GRAD[54]]) },
+      { time: 2250, color: rgbToHex([COLOR_GRAD[56], COLOR_GRAD[57], COLOR_GRAD[58]]) },
+      { time: 2400, color: rgbToHex([COLOR_GRAD[60], COLOR_GRAD[61], COLOR_GRAD[62]]) },
+      { time: 2550, color: rgbToHex([COLOR_GRAD[64], COLOR_GRAD[65], COLOR_GRAD[66]]) },
+      { time: 2700, color: rgbToHex([COLOR_GRAD[68], COLOR_GRAD[69], COLOR_GRAD[70]]) },
+      { time: 2850, color: rgbToHex([COLOR_GRAD[72], COLOR_GRAD[73], COLOR_GRAD[74]]) },
+      { time: 3000, color: rgbToHex([COLOR_GRAD[76], COLOR_GRAD[77], COLOR_GRAD[78]]) },
+      { time: 3150, color: rgbToHex([COLOR_GRAD[80], COLOR_GRAD[81], COLOR_GRAD[82]]) },
+      { time: 3300, color: rgbToHex([COLOR_GRAD[84], COLOR_GRAD[85], COLOR_GRAD[86]]) },
+      { time: 3450, color: rgbToHex([COLOR_GRAD[88], COLOR_GRAD[89], COLOR_GRAD[90]]) },
+      { time: 3600, color: rgbToHex([COLOR_GRAD[92], COLOR_GRAD[93], COLOR_GRAD[94]]) }
     ],
     unit      : ' min',
     position  : 'topright',
@@ -154,7 +154,7 @@ function accessibility_map() {
   travelTypeButtons = r360.radioButtonControl({
     buttons: [
       {
-        label: '<i class="fa fa-male"></i>  Walking',
+        label: '<i class="fa fa-female"></i>  Walking',
         key: 'walk',
         tooltip: 'Walking speed is on average 5km/h',
         checked: false
@@ -266,10 +266,11 @@ function initShaders() {
 
     /* get attribute and uniform locations */
     sp.uniformMatrix = gl.getUniformLocation(sp, "u_matrix");
+    sp.textureRamp = gl.getUniformLocation(sp, "u_texture");
     sp.vertexPosition = gl.getAttribLocation(sp, "a_vertex");
-    sp.vertexColor = gl.getAttribLocation(sp, "a_color");
+    sp.textureCoord = gl.getAttribLocation(sp, "a_coord");
     gl.enableVertexAttribArray(sp.vertexPosition);
-    gl.enableVertexAttribArray(sp.vertexColor);
+    gl.enableVertexAttribArray(sp.textureCoord);
   }
 }
 
@@ -328,39 +329,23 @@ function getShader(id) {
 function getGltfTiles(tile, zoom) {
   'use strict';
 
-// window.console.log("getGltfTiles(zoom): " + zoom);
-
-
   /* request tile from tiling server */
   requestTile(tile.x, tile.y, zoom, function(response){
-
-//   window.console.log("getGltfTiles(response.tile.gltf.zoom): " + response.tile.gltf.zoom);
 
     if (response.tile.gltf.buffers.vertices.length > 0 &&
       response.tile.gltf.buffers.indices.length > 0) {
 
-      let vtx = new Float32Array(response.tile.gltf.buffers.vertices);
-      let idx = new Uint16Array(response.tile.gltf.buffers.indices);
-
-      /* calculate the color ramp on the fly */
-      let clrSize = 4;
-      let tmpClr = [0.0, 0.0, 0.0, 0.0];
-      let clr = new Float32Array(response.tile.gltf.buffers.times.length * clrSize);
-      for (let i = 0; i < response.tile.gltf.buffers.times.length; i += 1) {
-        let tmpTime = response.tile.gltf.buffers.times[i] * TRAVEL_TIME;
-        tmpClr = pickColor(tmpTime);
-        clr[i * clrSize]     = tmpClr[0];
-        clr[i * clrSize + 1] = tmpClr[1];
-        clr[i * clrSize + 2] = tmpClr[2];
-        clr[i * clrSize + 3] = tmpClr[3];
-      }
-
       /* create a tile buffer object for the current tile */
-      let tileBuffer = L.tileBuffer(vtx, idx, clr, {
-        x: tile.x,
-        y: tile.y,
-        zoom: zoom
-      });
+      let tileBuffer = L.tileBuffer(
+        response.tile.gltf.buffers.vertices,
+        response.tile.gltf.buffers.indices,
+        response.tile.gltf.buffers.times,
+        {
+          x: tile.x,
+          y: tile.y,
+          zoom: zoom
+        }
+      );
 
       /* make sanity check on the tile buffer cache */
       if (TILE_CACHE.getZoom() != zoom) {
@@ -387,7 +372,6 @@ function getGltfTiles(tile, zoom) {
 function requestTile(x, y, z, callback) {
   'use strict';
 
-// window.console.log("requestTile(x, y, z, callback): " + z);
   let travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
@@ -398,66 +382,6 @@ function requestTile(x, y, z, callback) {
   travelOptions.setY(y);
   travelOptions.setZ(z);
   r360.MobieService.getGraph(travelOptions, callback);
-}
-
-function pickColor(selectedTime) {
-  'use strict';
-
-  let alpha = 0.0;
-  let pickedColor = [0.0, 0.0, 0.0, alpha];
-  if (selectedTime < TRAVEL_TIME) {
-    alpha = 1.0;
-  }
-  if        (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 23.0) {
-    pickedColor = [COLOR_GRAD[23 * 3], COLOR_GRAD[23 * 3 + 1], COLOR_GRAD[23 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 22.0) {
-    pickedColor = [COLOR_GRAD[22 * 3], COLOR_GRAD[22 * 3 + 1], COLOR_GRAD[22 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 21.0) {
-    pickedColor = [COLOR_GRAD[21 * 3], COLOR_GRAD[21 * 3 + 1], COLOR_GRAD[21 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 20.0) {
-    pickedColor = [COLOR_GRAD[20 * 3], COLOR_GRAD[20 * 3 + 1], COLOR_GRAD[20 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 19.0) {
-    pickedColor = [COLOR_GRAD[19 * 3], COLOR_GRAD[19 * 3 + 1], COLOR_GRAD[19 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 18.0) {
-    pickedColor = [COLOR_GRAD[18 * 3], COLOR_GRAD[18 * 3 + 1], COLOR_GRAD[18 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 17.0) {
-    pickedColor = [COLOR_GRAD[17 * 3], COLOR_GRAD[17 * 3 + 1], COLOR_GRAD[17 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 16.0) {
-    pickedColor = [COLOR_GRAD[16 * 3], COLOR_GRAD[16 * 3 + 1], COLOR_GRAD[16 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 15.0) {
-    pickedColor = [COLOR_GRAD[15 * 3], COLOR_GRAD[15 * 3 + 1], COLOR_GRAD[15 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 14.0) {
-    pickedColor = [COLOR_GRAD[14 * 3], COLOR_GRAD[14 * 3 + 1], COLOR_GRAD[14 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 13.0) {
-    pickedColor = [COLOR_GRAD[13 * 3], COLOR_GRAD[13 * 3 + 1], COLOR_GRAD[13 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 12.0) {
-    pickedColor = [COLOR_GRAD[12 * 3], COLOR_GRAD[12 * 3 + 1], COLOR_GRAD[12 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 11.0) {
-    pickedColor = [COLOR_GRAD[11 * 3], COLOR_GRAD[11 * 3 + 1], COLOR_GRAD[11 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 * 10.0) {
-    pickedColor = [COLOR_GRAD[10 * 3], COLOR_GRAD[10 * 3 + 1], COLOR_GRAD[10 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 *  9.0) {
-    pickedColor = [COLOR_GRAD[ 9 * 3], COLOR_GRAD[ 9 * 3 + 1], COLOR_GRAD[ 9 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 *  8.0) {
-    pickedColor = [COLOR_GRAD[ 8 * 3], COLOR_GRAD[ 8 * 3 + 1], COLOR_GRAD[ 8 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 *  7.0) {
-    pickedColor = [COLOR_GRAD[ 7 * 3], COLOR_GRAD[ 7 * 3 + 1], COLOR_GRAD[ 7 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 *  6.0) {
-    pickedColor = [COLOR_GRAD[ 6 * 3], COLOR_GRAD[ 6 * 3 + 1], COLOR_GRAD[ 6 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 *  5.0) {
-    pickedColor = [COLOR_GRAD[ 5 * 3], COLOR_GRAD[ 5 * 3 + 1], COLOR_GRAD[ 5 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 *  4.0) {
-    pickedColor = [COLOR_GRAD[ 4 * 3], COLOR_GRAD[ 4 * 3 + 1], COLOR_GRAD[ 4 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 *  3.0) {
-    pickedColor = [COLOR_GRAD[ 3 * 3], COLOR_GRAD[ 3 * 3 + 1], COLOR_GRAD[ 3 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0 *  2.0) {
-    pickedColor = [COLOR_GRAD[ 2 * 3], COLOR_GRAD[ 2 * 3 + 1], COLOR_GRAD[ 2 * 3 + 2], alpha];
-  } else if (selectedTime > TRAVEL_TIME_LIMIT / 24.0       ) {
-    pickedColor = [COLOR_GRAD[     3], COLOR_GRAD[     3 + 1], COLOR_GRAD[     3 + 2], alpha];
-  } else {
-    pickedColor = [COLOR_GRAD[     0], COLOR_GRAD[         1], COLOR_GRAD[         2], alpha];
-  }
-  return pickedColor;
 }
 
 /**
@@ -492,9 +416,9 @@ function drawGL() {
     let offset = latLonToPixels(topLeft.lat, topLeft.lng);
     let width = Math.max(zoom - 12.0, 1.0);
 
-    /* define sizes of vertex and color buffer objects */
+    /* define sizes of vertex and texture coordinate buffer objects */
     let vtxSize = 2;
-    let clrSize = 4;
+    let texSize = 1;
 
     /* define model view matrix. here: identity */
     let uMatrix = new Float32Array([
@@ -503,6 +427,23 @@ function drawGL() {
       0,0,1,0,
       0,0,0,1
     ]);
+
+    /* generate texture from color gradient */
+    let texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    let texLevel = 0;
+    let texWidth = 25;
+    let texHeight = 1;
+    let texData = new Uint8Array(COLOR_GRAD);
+    gl.texImage2D(gl.TEXTURE_2D, texLevel, gl.RGBA, texWidth, texHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, texData);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    let texUnit = 5;
+    gl.activeTexture(gl.TEXTURE0 + texUnit);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(sp.textureRamp, texUnit);
 
     /* translate to move [0,0] to top left corner */
     translateMatrix(uMatrix, -1, 1);
@@ -543,11 +484,11 @@ function drawGL() {
         0
       );
 
-      /* create color buffer */
-      let clrBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, clrBuffer);
+      /* create texture coordinate buffer */
+      let texBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
-      gl.vertexAttribPointer(sp.vertexColor, clrSize, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribPointer(sp.textureCoord, texSize, gl.FLOAT, false, 0, 0);
 
       /* create index buffer */
       let idxBuffer = gl.createBuffer();
@@ -620,9 +561,9 @@ function latLonToPixels(lat, lon) {
 }
 
 function rgbToHex(rgb) {
-  let red = rgb[0] * 255;
-  let grn = rgb[1] * 255;
-  let blu = rgb[2] * 255;
+  let red = rgb[0];
+  let grn = rgb[1];
+  let blu = rgb[2];
   let hex = blu | (grn << 8) | (red << 16);
   return '#' + (0x1000000 + hex).toString(16).slice(1);
 }
