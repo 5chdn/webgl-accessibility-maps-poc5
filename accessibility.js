@@ -61,10 +61,11 @@ const COLOR_GRAD = [
 function accessibility_map() {
   'use strict';
 
-  //textureImage.src = "img/blue-white-red.png";
-  //textureImage.src = "img/green-white-red.png";
   textureImage.src = "img/heat_gradient_discrete_1.png";
   //textureImage.src = "img/gray_scale.png";
+  //textureImage.src = "img/gray-red.png";
+
+  r360.config.requestTimeout = 120000;
 
   /* leaflet map canvas */
   m = L.map('map', {
