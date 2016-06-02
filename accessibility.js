@@ -19,7 +19,6 @@ let TILE_CACHE;
 
 /* default travel time is 30 minutes */
 let TRAVEL_TIME = 1800;
-const TRAVEL_TIME_LIMIT = 3600;
 let TRAVEL_TYPE = 'car';
 
 /* travel time control (r360) and a marker */
@@ -62,7 +61,10 @@ const COLOR_GRAD = [
 function accessibility_map() {
   'use strict';
 
-  textureImage.src = "img/blue-white-red.png";
+  //textureImage.src = "img/blue-white-red.png";
+  //textureImage.src = "img/green-white-red.png";
+  textureImage.src = "img/heat_gradient_discrete_1.png";
+  //textureImage.src = "img/gray_scale.png";
 
   /* leaflet map canvas */
   m = L.map('map', {
@@ -96,21 +98,14 @@ function accessibility_map() {
   initGL();
   initShaders();
 
-  /* setup map with mapbox basemap tiles */
-  let tileLayerUrl =
-    'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png' +
-      '?access_token={accessToken}';
-  let token =
-    'pk.eyJ1IjoiZG9uc2Nob2UiLCJhIjoiMkN5RUk0QSJ9.FGcEYWjfgcJUmSyN1tkwgQ';
-  let mapboxTiles = L.tileLayer(tileLayerUrl, {
-    attribution: 'WebGL/glTF Tiling PoC #5 | &copy; 2016 A. Schoedon',
-    id: 'mapbox.dark',
-    accessToken: token,
-    noWrap: true,
-    continuousWorld: false,
-    attributionControl: false
-  });
-  mapboxTiles.addTo(m);
+  let bgTiles = L.tileLayer(
+    'http://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+    {
+      subdomains: 'abcd',
+      maxZoom: 18
+    }
+  ).addTo(m);
+
 
   /* use a r360 time slider to adjust travel time */
   travelTimeControl = r360.travelTimeControl({
