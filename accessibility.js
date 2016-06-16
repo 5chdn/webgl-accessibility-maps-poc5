@@ -365,13 +365,14 @@ function requestTile(x, y, z, callback) {
 
   let travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
-  travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
+  travelOptions.setServiceUrl('https://dev.route360.net/mobie/v2');
   travelOptions.addSource(startMarker);
   travelOptions.setMaxRoutingTime(TRAVEL_TIME);
   travelOptions.setTravelType(TRAVEL_TYPE);
   travelOptions.setX(x);
   travelOptions.setY(y);
   travelOptions.setZ(z);
+  travelOptions.setDecimalPlaces(8);
   r360.MobieService.getGraph(travelOptions, callback);
 }
 
