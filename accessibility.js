@@ -256,6 +256,7 @@ function initShaders() {
     /* get attribute and uniform locations */
     sp.uniformMatrix = gl.getUniformLocation(sp, "u_matrix");
     sp.textureRamp = gl.getUniformLocation(sp, "u_texture");
+    sp.travelTime = gl.getUniformLocation(sp, "u_time");
     sp.vertexPosition = gl.getAttribLocation(sp, "a_vertex");
     sp.textureCoord = gl.getAttribLocation(sp, "a_coord");
     gl.enableVertexAttribArray(sp.vertexPosition);
@@ -365,7 +366,7 @@ function requestTile(x, y, z, callback) {
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/v2/');
   travelOptions.addSource(startMarker);
-  travelOptions.setMaxRoutingTime(TRAVEL_TIME);
+  travelOptions.setMaxRoutingTime(3600);
   travelOptions.setTravelType(TRAVEL_TYPE);
   travelOptions.setX(x);
   travelOptions.setY(y);
@@ -429,6 +430,9 @@ function drawGL() {
     let texUnit = 5;
     gl.activeTexture(gl.TEXTURE0 + texUnit);
     gl.uniform1i(sp.textureRamp, texUnit);
+
+    /* pass selected travel time to fragment shader */
+    gl.uniform1f(sp.travelTime, TRAVEL_TIME / 3600.0);
 
     /* translate to move [0,0] to top left corner */
     translateMatrix(uMatrix, -1, 1);

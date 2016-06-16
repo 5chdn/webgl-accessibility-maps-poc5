@@ -65,13 +65,14 @@
     <script type="x-shader/x-fragment" id="shader-frg">
       precision highp float;
       uniform sampler2D u_texture;
+      uniform float u_time;
       varying float v_coord;
 
       void main(void) {
-        if (v_coord < 1.0) {
-          gl_FragColor = texture2D(u_texture, vec2(abs(v_coord), 0.5));
-        } else {
+        if (v_coord > u_time) {
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); /* hide unreachable roads */
+        } else {
+          gl_FragColor = texture2D(u_texture, vec2(abs(v_coord), 0.5));
         }
       }
     </script>
