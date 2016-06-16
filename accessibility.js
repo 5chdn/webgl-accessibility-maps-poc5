@@ -27,6 +27,12 @@ let travelTypeButtons;
 let startMarker;
 let textureImage = new Image();
 
+/* define redrawing interval */
+let DRAW_NOW = 0;
+let DRAW_THEN = Date.now();
+let DRAW_INTERVAL = 1000.0; // 1 FPS
+let DRAW_DELTA = 0;
+
 const COLOR_GRAD = [
   49.0, 54.0, 149.0, 255.0, /* #313695 */
   59.0,  85.0, 164.0, 255.0, /* #3b55a4 */
@@ -381,111 +387,121 @@ function requestTile(x, y, z, callback) {
 function drawGL() {
   'use strict';
 
-  /* only proceed if context is available */
-  if (gl) {
+  /* redraw the scene in specified interval */
+  requestAnimationFrame(drawGL);
+  DRAW_NOW = Date.now();
+  DRAW_DELTA = DRAW_NOW - DRAW_THEN;
+  if (DRAW_DELTA > DRAW_INTERVAL) {
+    DRAW_THEN = DRAW_NOW - (DRAW_DELTA % DRAW_INTERVAL);
 
-    /* enable blending */
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    /* only proceed if context is available */
+    if (gl) {
 
-    /* disable depth testing */
-    gl.disable(gl.DEPTH_TEST);
+      _log("DrawGL()");
 
-    /* clear color buffer for redraw */
-    gl.clear(gl.COLOR_BUFFER_BIT);
+      /* enable blending */
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    /* set view port to canvas size */
-    gl.viewport(0, 0, c.width, c.height);
+      /* disable depth testing */
+      gl.disable(gl.DEPTH_TEST);
 
-     /* get map bounds and top left corner used for webgl translation later */
-    let bounds = m.getBounds();
-    let topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
+      /* clear color buffer for redraw */
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
-    /* precalculate map scale, offset and line width */
-    let zoom = m.getZoom();
-    let scale = Math.pow(2, zoom) * 256.0;
-    let offset = latLonToPixels(topLeft.lat, topLeft.lng);
-    let width = Math.max(zoom - 12.0, 1.0);
+      /* set view port to canvas size */
+      gl.viewport(0, 0, c.width, c.height);
 
-    /* define sizes of vertex and texture coordinate buffer objects */
-    let vtxSize = 2;
-    let texSize = 1;
+       /* get map bounds and top left corner used for webgl translation later */
+      let bounds = m.getBounds();
+      let topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
 
-    /* define model view matrix. here: identity */
-    let uMatrix = new Float32Array([
-      1,0,0,0,
-      0,1,0,0,
-      0,0,1,0,
-      0,0,0,1
-    ]);
+      /* precalculate map scale, offset and line width */
+      let zoom = m.getZoom();
+      let scale = Math.pow(2, zoom) * 256.0;
+      let offset = latLonToPixels(topLeft.lat, topLeft.lng);
+      let width = Math.max(zoom - 12.0, 1.0);
 
-    /* generate texture from color gradient */
-    let texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
-    let texUnit = 5;
-    gl.activeTexture(gl.TEXTURE0 + texUnit);
-    gl.uniform1i(sp.textureRamp, texUnit);
+      /* define sizes of vertex and texture coordinate buffer objects */
+      let vtxSize = 2;
+      let texSize = 1;
 
-    /* pass selected travel time to fragment shader */
-    gl.uniform1f(sp.travelTime, TRAVEL_TIME / 3600.0);
+      /* define model view matrix. here: identity */
+      let uMatrix = new Float32Array([
+        1,0,0,0,
+        0,1,0,0,
+        0,0,1,0,
+        0,0,0,1
+      ]);
 
-    /* translate to move [0,0] to top left corner */
-    translateMatrix(uMatrix, -1, 1);
+      /* generate texture from color gradient */
+      let texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+      let texUnit = 5;
+      gl.activeTexture(gl.TEXTURE0 + texUnit);
+      gl.uniform1i(sp.textureRamp, texUnit);
 
-    /* scale based on canvas width and height */
-    scaleMatrix(uMatrix, 2.0 / c.width, -2.0 / c.height);
+      /* pass selected travel time to fragment shader */
+      gl.uniform1f(sp.travelTime, TRAVEL_TIME / 3600.0);
 
-    /* scale based on map zoom scale */
-    scaleMatrix(uMatrix, scale, scale);
+      /* translate to move [0,0] to top left corner */
+      translateMatrix(uMatrix, -1, 1);
 
-    /* translate offset to match current map position (lat/lon) */
-    translateMatrix(uMatrix, -offset.x, -offset.y);
+      /* scale based on canvas width and height */
+      scaleMatrix(uMatrix, 2.0 / c.width, -2.0 / c.height);
 
-    /* set model view */
-    gl.uniformMatrix4fv(sp.uniformMatrix, false, uMatrix);
+      /* scale based on map zoom scale */
+      scaleMatrix(uMatrix, scale, scale);
 
-    /* adjust line width based on zoom */
-    gl.lineWidth(width);
+      /* translate offset to match current map position (lat/lon) */
+      translateMatrix(uMatrix, -offset.x, -offset.y);
 
-    /* loop all tile buffers in cache and draw each geometry */
-    let tileBuffers = TILE_CACHE.getTileBufferCollection();
-    for (let i = TILE_CACHE.getSize() - 1; i >= 0; i -= 1) {
+      /* set model view */
+      gl.uniformMatrix4fv(sp.uniformMatrix, false, uMatrix);
 
-      /* create vertex buffer */
-      let vtxBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
-      gl.bufferData(
-        gl.ARRAY_BUFFER,
-        tileBuffers[i].getVertexBuffer(),
-        gl.STATIC_DRAW
-      );
-      gl.vertexAttribPointer(
-        sp.vertexPosition,
-        vtxSize,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
+      /* adjust line width based on zoom */
+      gl.lineWidth(width);
 
-      /* create texture coordinate buffer */
-      let texBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
-      gl.vertexAttribPointer(sp.textureCoord, texSize, gl.FLOAT, false, 0, 0);
+      /* loop all tile buffers in cache and draw each geometry */
+      let tileBuffers = TILE_CACHE.getTileBufferCollection();
+      for (let i = TILE_CACHE.getSize() - 1; i >= 0; i -= 1) {
 
-      /* create index buffer */
-      let idxBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
+        /* create vertex buffer */
+        let vtxBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          tileBuffers[i].getVertexBuffer(),
+          gl.STATIC_DRAW
+        );
+        gl.vertexAttribPointer(
+          sp.vertexPosition,
+          vtxSize,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
 
-      /* draw geometry lines by indices */
-      gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
+        /* create texture coordinate buffer */
+        let texBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(sp.textureCoord, texSize, gl.FLOAT, false, 0, 0);
+
+        /* create index buffer */
+        let idxBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
+
+        /* draw geometry lines by indices */
+        gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
+      }
     }
   }
 }
