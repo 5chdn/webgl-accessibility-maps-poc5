@@ -61,9 +61,9 @@ const COLOR_GRAD = [
 function accessibility_map() {
   'use strict';
 
-  textureImage.src = "img/heat_gradient_discrete_1.png";
+  //textureImage.src = "img/heat_gradient_discrete_1.png";
   //textureImage.src = "img/gray_scale.png";
-  //textureImage.src = "img/gray-red.png";
+  textureImage.src = "img/gray-red.png";
 
   r360.config.requestTimeout = 120000;
 
@@ -193,9 +193,7 @@ function accessibility_map() {
   travelTimeControl.onSlideStop(function(){
     let recentTime = TRAVEL_TIME;
     TRAVEL_TIME = travelTimeControl.getMaxValue();
-    if (recentTime > TRAVEL_TIME) {
-      TILE_CACHE.resetHard();
-    }
+    TILE_CACHE.resetHard();
     gltfTiles.redraw();
   });
   travelTimeControl.addTo(m);
@@ -365,14 +363,14 @@ function requestTile(x, y, z, callback) {
 
   let travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
-  travelOptions.setServiceUrl('https://dev.route360.net/mobie/v2');
+  travelOptions.setServiceUrl('https://dev.route360.net/mobie/v2/');
   travelOptions.addSource(startMarker);
   travelOptions.setMaxRoutingTime(TRAVEL_TIME);
   travelOptions.setTravelType(TRAVEL_TYPE);
   travelOptions.setX(x);
   travelOptions.setY(y);
   travelOptions.setZ(z);
-  travelOptions.setDecimalPlaces(8);
+  travelOptions.setDecimalPlaces(z);
   r360.MobieService.getGraph(travelOptions, callback);
 }
 
