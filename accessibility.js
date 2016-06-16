@@ -96,7 +96,7 @@ function accessibility_map() {
   }).addTo(m);
 
   /* setup leaflet canvas webgl overlay */
-  o = L.canvasOverlay().drawing(drawGL()).addTo(m);
+  o = L.canvasOverlay().drawing(drawGL(true)).addTo(m);
   c = o.canvas();
   o.canvas.width = c.clientWidth;
   o.canvas.height = c.clientHeight;
@@ -192,15 +192,13 @@ function accessibility_map() {
 
   /* redraw the scene after all tiles are loaded */
   gltfTiles.on('load', function(e) {
-      drawGL();
+      drawGL(true);
   });
 
   /* update overlay on slider events */
   travelTimeControl.onSlideStop(function(){
     let recentTime = TRAVEL_TIME;
     TRAVEL_TIME = travelTimeControl.getMaxValue();
-    TILE_CACHE.resetHard();
-    gltfTiles.redraw();
   });
   travelTimeControl.addTo(m);
   travelTimeControl.setPosition('topright');
@@ -352,7 +350,7 @@ function getGltfTiles(tile, zoom) {
       TILE_CACHE.updateTile(tileBuffer);
 
       /* redraw the scene */
-      drawGL();
+      drawGL(true);
     }
   });
 }
@@ -384,20 +382,18 @@ function requestTile(x, y, z, callback) {
 /**
 * draw all tiles from cache on the canvas overlay
 */
-function drawGL() {
+function drawGL(forced = false) {
   'use strict';
 
   /* redraw the scene in specified interval */
   requestAnimationFrame(drawGL);
   DRAW_NOW = Date.now();
   DRAW_DELTA = DRAW_NOW - DRAW_THEN;
-  if (DRAW_DELTA > DRAW_INTERVAL) {
+  if (DRAW_DELTA > DRAW_INTERVAL || forced === true) {
     DRAW_THEN = DRAW_NOW - (DRAW_DELTA % DRAW_INTERVAL);
 
     /* only proceed if context is available */
     if (gl) {
-
-      _log("DrawGL()");
 
       /* enable blending */
       gl.enable(gl.BLEND);
