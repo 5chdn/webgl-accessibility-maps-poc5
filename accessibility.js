@@ -512,7 +512,19 @@ function drawGL() {
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
 
       /* draw geometry lines by indices */
+//      if (tileBuffers[i].getIndexBuffer().length > 65535) {
+//        _log("DOES NOT WORK!");
+//
+//        let ext = (
+//          gl.getExtension('OES_element_index_uint') ||
+//          gl.getExtension('MOZ_OES_element_index_uint') ||
+//          gl.getExtension('WEBKIT_OES_element_index_uint')
+//        );
+//
+//        gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_INT, idxBuffer);
+//      } else {
       gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
+//      }
     }
   }
 }
