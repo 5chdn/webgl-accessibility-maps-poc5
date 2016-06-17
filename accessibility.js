@@ -351,6 +351,24 @@ function getGltfTiles(tile, zoom) {
     if (response.tile.gltf.buffers.vertices.length > 0 &&
       response.tile.gltf.buffers.indices.length > 0) {
 
+      //_log(tile.x + "," + tile.y + "," + zoom)
+
+      if (tile.x == 8800 && tile.y == 5373 && zoom == 14) {
+        let _idx = gltfArraybufferCoder.encodeIndices(response.tile.gltf.buffers.indices);
+        _log("indices: " + response.tile.gltf.buffers.indices.length + ", " + response.tile.gltf.buffers.indices.length * 2 + " Bytes");
+        window.console.log(gltfArraybufferCoder.encodeBase64DataUri(_idx));
+        let _vtx = gltfArraybufferCoder.encodeVertices(response.tile.gltf.buffers.vertices);
+        _log("vertices: " + response.tile.gltf.buffers.vertices.length + ", " + response.tile.gltf.buffers.vertices.length * 4 + " Bytes");
+        window.console.log(gltfArraybufferCoder.encodeBase64DataUri(_vtx));
+        let _clr = gltfArraybufferCoder.encodeVertices(response.tile.gltf.buffers.times);
+        _log("times: " + response.tile.gltf.buffers.times.length + ", " + response.tile.gltf.buffers.times.length * 4 + " Bytes");
+        window.console.log(gltfArraybufferCoder.encodeBase64DataUri(_clr));
+        let _con = gltfArraybufferCoder.concatenateBuffers(_idx, _vtx);
+        let _fin = gltfArraybufferCoder.concatenateBuffers(_con, _clr);
+        _log("merged: " + _fin.byteLength + " Bytes");
+        window.console.log(gltfArraybufferCoder.encodeBase64DataUri(_fin));
+      }
+
       /* create a tile buffer object for the current tile */
       let tileBuffer = L.tileBuffer(
         response.tile.gltf.buffers.vertices,
