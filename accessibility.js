@@ -63,7 +63,8 @@ function accessibility_map() {
 
   //textureImage.src = "img/heat_gradient_discrete_1.png";
   //textureImage.src = "img/gray_scale.png";
-  textureImage.src = "img/gray-red.png";
+  //textureImage.src = "img/gray-red.png";
+  textureImage.src = "img/color-brewer.png";
 
   r360.config.requestTimeout = 120000;
 
