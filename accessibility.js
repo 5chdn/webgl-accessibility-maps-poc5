@@ -412,7 +412,7 @@ function requestTile(x, y, z, callback) {
 /**
 * draw all tiles from cache on the canvas overlay
 */
-function drawGL(forced = false) {
+function drawGL() {
   'use strict';
 
   /* only proceed if context is available */
