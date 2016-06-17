@@ -148,7 +148,7 @@ function accessibility_map() {
         label: '<i class="fa fa-female"></i>  Walking',
         key: 'walk',
         tooltip: 'Walking speed is on average 5km/h',
-        checked: false
+        checked: true
       },
       {
         label: '<i class="fa fa-bicycle"></i> Cycling',
@@ -160,7 +160,13 @@ function accessibility_map() {
         label: '<i class="fa fa-car"></i> Car',
         key: 'car',
         tooltip: 'Car speed is limited by speed limit',
-        checked: true
+        checked: false
+      },
+      {
+        label: '<i class="fa fa-bus"></i> Transit',
+        key: 'transit',
+        tooltip: 'This demo only contains subways',
+        checked: false
       }
     ]
   });
