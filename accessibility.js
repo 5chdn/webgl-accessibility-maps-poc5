@@ -376,6 +376,7 @@ function requestTile(x, y, z, callback) {
   travelOptions.setY(y);
   travelOptions.setZ(z);
   travelOptions.setDecimalPlaces(z);
+  travelOptions.setEdgeClasses([1, 11, 12, 13, 14, 15, 16, 21, 22, 31, 32, 41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99]);
   r360.MobieService.getGraph(travelOptions, callback);
 }
 
