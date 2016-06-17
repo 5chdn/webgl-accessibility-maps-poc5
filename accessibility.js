@@ -97,7 +97,7 @@ function accessibility_map() {
   o.canvas.height = c.clientHeight;
 
   /* initialize webgl on canvas overlay */
-  initGL();
+  initGL(c);
   initShaders();
 
   let bgTiles = L.tileLayer(
@@ -247,17 +247,10 @@ function accessibility_map() {
 /**
 * initialize webgl context
 */
-function initGL() {
+function initGL(canvas) {
   'use strict';
 
-  /* wrap webgl context in a debug context */
-  gl = WebGLDebugUtils.makeDebugContext(
-    WebGLUtils.setupWebGL(c),
-    throwOnGLError
-  );
-
-  /* init webgl debug context */
-  WebGLDebugUtils.init(gl);
+  gl = canvas.getContext('experimental-webgl', { antialias: true });
 }
 
 /**
@@ -586,16 +579,4 @@ function rgbToHex(rgb) {
 function _log(s) {
   let n = new Date().getTime() / 1000.0;
   window.console.log('[' + n.toFixed(3) + '] ' + s);
-}
-
-/**
-* throw webgl errors
-*
-* @param {glEnum} e the webgl error
-* @param {string} f the name of the last function call
-* @param {object} args additional arguments
-* @throws webgl error
-*/
-function throwOnGLError(e, f, args) {
-  throw WebGLDebugUtils.glEnumToString(e) + " was caused by call to " + f;
 }
