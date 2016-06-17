@@ -12,26 +12,20 @@ let sp;
 
 /* center berlin, default zoom */
 const DEFAULT_CENTER = [52.516, 13.377];
-const DEFAULT_ZOOM = 12;
+const DEFAULT_ZOOM = 14;
 
 /* cache for all tile's vertex, index and color buffers */
 let TILE_CACHE;
 
 /* default travel time is 30 minutes */
 let TRAVEL_TIME = 1800;
-let TRAVEL_TYPE = 'car';
+let TRAVEL_TYPE = 'walk';
 
 /* travel time control (r360) and a marker */
 let travelTimeControl;
 let travelTypeButtons;
 let startMarker;
 let textureImage = new Image();
-
-/* define redrawing interval */
-let DRAW_NOW = 0;
-let DRAW_THEN = Date.now();
-let DRAW_INTERVAL = 1000.0; // 1 FPS
-let DRAW_DELTA = 0;
 
 const COLOR_GRAD = [
   49.0, 54.0, 149.0, 255.0, /* #313695 */
@@ -75,7 +69,7 @@ function accessibility_map() {
 
   /* leaflet map canvas */
   m = L.map('map', {
-    minZoom: 3,
+    minZoom: 10,
     maxZoom: 18,
     maxBounds: L.latLngBounds(L.latLng(49.6, 6.0), L.latLng(54.8, 20.4)),
     noWrap: true,
@@ -175,6 +169,7 @@ function accessibility_map() {
     TRAVEL_TYPE = travelTypeButtons.getValue();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
+    drawGL();
   });
   travelTypeButtons.setPosition('topleft');
 
@@ -188,17 +183,19 @@ function accessibility_map() {
   startMarker.on('dragend', function(){
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
+    drawGL();
   });
 
   /* redraw the scene after all tiles are loaded */
   gltfTiles.on('load', function(e) {
-      drawGL(true);
+      drawGL();
   });
 
   /* update overlay on slider events */
   travelTimeControl.onSlideStop(function(){
     let recentTime = TRAVEL_TIME;
     TRAVEL_TIME = travelTimeControl.getMaxValue();
+    drawGL();
   });
   travelTimeControl.addTo(m);
   travelTimeControl.setPosition('topright');
@@ -209,6 +206,31 @@ function accessibility_map() {
   /* reset tile buffer cache for each zoom level change */
   m.on('zoomstart', function(e) {
     TILE_CACHE.resetOnZoom(m.getZoom());
+    drawGL();
+  });
+
+  m.on('zoomlevelschange', function(e) {
+    drawGL();
+  });
+
+  m.on('zoomend', function(e) {
+    drawGL();
+  });
+
+  m.on('movestart', function(e) {
+    drawGL();
+  });
+
+  m.on('moveend', function(e) {
+    drawGL();
+  });
+
+  m.on('dragstart', function(e) {
+    drawGL();
+  });
+
+  m.on('dragend', function(e) {
+    drawGL();
   });
 
   let zoomControl = L.control.zoom({ position: 'bottomright' });
@@ -350,7 +372,7 @@ function getGltfTiles(tile, zoom) {
       TILE_CACHE.updateTile(tileBuffer);
 
       /* redraw the scene */
-      drawGL(true);
+      drawGL();
     }
   });
 }
@@ -386,119 +408,111 @@ function requestTile(x, y, z, callback) {
 function drawGL(forced = false) {
   'use strict';
 
-  /* redraw the scene in specified interval */
-  requestAnimationFrame(drawGL);
-  DRAW_NOW = Date.now();
-  DRAW_DELTA = DRAW_NOW - DRAW_THEN;
-  if (DRAW_DELTA > DRAW_INTERVAL || forced === true) {
-    DRAW_THEN = DRAW_NOW - (DRAW_DELTA % DRAW_INTERVAL);
+  /* only proceed if context is available */
+  if (gl) {
 
-    /* only proceed if context is available */
-    if (gl) {
+    /* enable blending */
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-      /* enable blending */
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    /* disable depth testing */
+    gl.disable(gl.DEPTH_TEST);
 
-      /* disable depth testing */
-      gl.disable(gl.DEPTH_TEST);
+    /* clear color buffer for redraw */
+    gl.clear(gl.COLOR_BUFFER_BIT);
 
-      /* clear color buffer for redraw */
-      gl.clear(gl.COLOR_BUFFER_BIT);
+    /* set view port to canvas size */
+    gl.viewport(0, 0, c.width, c.height);
 
-      /* set view port to canvas size */
-      gl.viewport(0, 0, c.width, c.height);
+     /* get map bounds and top left corner used for webgl translation later */
+    let bounds = m.getBounds();
+    let topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
 
-       /* get map bounds and top left corner used for webgl translation later */
-      let bounds = m.getBounds();
-      let topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
+    /* precalculate map scale, offset and line width */
+    let zoom = m.getZoom();
+    let scale = Math.pow(2, zoom) * 256.0;
+    let offset = latLonToPixels(topLeft.lat, topLeft.lng);
+    let width = Math.max(zoom - 12.0, 1.0);
 
-      /* precalculate map scale, offset and line width */
-      let zoom = m.getZoom();
-      let scale = Math.pow(2, zoom) * 256.0;
-      let offset = latLonToPixels(topLeft.lat, topLeft.lng);
-      let width = Math.max(zoom - 12.0, 1.0);
+    /* define sizes of vertex and texture coordinate buffer objects */
+    let vtxSize = 2;
+    let texSize = 1;
 
-      /* define sizes of vertex and texture coordinate buffer objects */
-      let vtxSize = 2;
-      let texSize = 1;
+    /* define model view matrix. here: identity */
+    let uMatrix = new Float32Array([
+      1,0,0,0,
+      0,1,0,0,
+      0,0,1,0,
+      0,0,0,1
+    ]);
 
-      /* define model view matrix. here: identity */
-      let uMatrix = new Float32Array([
-        1,0,0,0,
-        0,1,0,0,
-        0,0,1,0,
-        0,0,0,1
-      ]);
+    /* generate texture from color gradient */
+    let texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+    let texUnit = 5;
+    gl.activeTexture(gl.TEXTURE0 + texUnit);
+    gl.uniform1i(sp.textureRamp, texUnit);
 
-      /* generate texture from color gradient */
-      let texture = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
-      let texUnit = 5;
-      gl.activeTexture(gl.TEXTURE0 + texUnit);
-      gl.uniform1i(sp.textureRamp, texUnit);
+    /* pass selected travel time to fragment shader */
+    gl.uniform1f(sp.travelTime, TRAVEL_TIME / 3600.0);
 
-      /* pass selected travel time to fragment shader */
-      gl.uniform1f(sp.travelTime, TRAVEL_TIME / 3600.0);
+    /* translate to move [0,0] to top left corner */
+    translateMatrix(uMatrix, -1, 1);
 
-      /* translate to move [0,0] to top left corner */
-      translateMatrix(uMatrix, -1, 1);
+    /* scale based on canvas width and height */
+    scaleMatrix(uMatrix, 2.0 / c.width, -2.0 / c.height);
 
-      /* scale based on canvas width and height */
-      scaleMatrix(uMatrix, 2.0 / c.width, -2.0 / c.height);
+    /* scale based on map zoom scale */
+    scaleMatrix(uMatrix, scale, scale);
 
-      /* scale based on map zoom scale */
-      scaleMatrix(uMatrix, scale, scale);
+    /* translate offset to match current map position (lat/lon) */
+    translateMatrix(uMatrix, -offset.x, -offset.y);
 
-      /* translate offset to match current map position (lat/lon) */
-      translateMatrix(uMatrix, -offset.x, -offset.y);
+    /* set model view */
+    gl.uniformMatrix4fv(sp.uniformMatrix, false, uMatrix);
 
-      /* set model view */
-      gl.uniformMatrix4fv(sp.uniformMatrix, false, uMatrix);
+    /* adjust line width based on zoom */
+    gl.lineWidth(width);
 
-      /* adjust line width based on zoom */
-      gl.lineWidth(width);
+    /* loop all tile buffers in cache and draw each geometry */
+    let tileBuffers = TILE_CACHE.getTileBufferCollection();
+    for (let i = TILE_CACHE.getSize() - 1; i >= 0; i -= 1) {
 
-      /* loop all tile buffers in cache and draw each geometry */
-      let tileBuffers = TILE_CACHE.getTileBufferCollection();
-      for (let i = TILE_CACHE.getSize() - 1; i >= 0; i -= 1) {
+      /* create vertex buffer */
+      let vtxBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        tileBuffers[i].getVertexBuffer(),
+        gl.STATIC_DRAW
+      );
+      gl.vertexAttribPointer(
+        sp.vertexPosition,
+        vtxSize,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
 
-        /* create vertex buffer */
-        let vtxBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
-        gl.bufferData(
-          gl.ARRAY_BUFFER,
-          tileBuffers[i].getVertexBuffer(),
-          gl.STATIC_DRAW
-        );
-        gl.vertexAttribPointer(
-          sp.vertexPosition,
-          vtxSize,
-          gl.FLOAT,
-          false,
-          0,
-          0
-        );
+      /* create texture coordinate buffer */
+      let texBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(sp.textureCoord, texSize, gl.FLOAT, false, 0, 0);
 
-        /* create texture coordinate buffer */
-        let texBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
-        gl.vertexAttribPointer(sp.textureCoord, texSize, gl.FLOAT, false, 0, 0);
+      /* create index buffer */
+      let idxBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
 
-        /* create index buffer */
-        let idxBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
-
-        /* draw geometry lines by indices */
-        gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
-      }
+      /* draw geometry lines by indices */
+      gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
     }
   }
 }
