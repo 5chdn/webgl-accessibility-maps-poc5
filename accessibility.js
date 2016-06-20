@@ -70,7 +70,7 @@ function accessibility_map() {
 
   /* leaflet map canvas */
   m = L.map('map', {
-    minZoom: 10,
+    minZoom:  4,
     maxZoom: 18,
     maxBounds: L.latLngBounds(L.latLng(49.6, 6.0), L.latLng(54.8, 20.4)),
     noWrap: true,
@@ -509,22 +509,27 @@ function drawGL() {
       /* create index buffer */
       let idxBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tileBuffers[i].getIndexBuffer(), gl.STATIC_DRAW);
 
       /* draw geometry lines by indices */
-//      if (tileBuffers[i].getIndexBuffer().length > 65535) {
-//        _log("DOES NOT WORK!");
-//
-//        let ext = (
-//          gl.getExtension('OES_element_index_uint') ||
-//          gl.getExtension('MOZ_OES_element_index_uint') ||
-//          gl.getExtension('WEBKIT_OES_element_index_uint')
-//        );
-//
-//        gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_INT, idxBuffer);
-//      } else {
-      gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
-//      }
+      if (tileBuffers[i].getIndexBuffer().length > 65535) {
+
+        /* use 32 bit extension */
+        let ext = (
+          gl.getExtension('OES_element_index_uint') ||
+          gl.getExtension('MOZ_OES_element_index_uint') ||
+          gl.getExtension('WEBKIT_OES_element_index_uint')
+        );
+
+        let buffer = new Uint32Array(tileBuffers[i].getIndexBuffer());
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
+        gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_INT, idxBuffer);
+      } else {
+
+        /* fall back to webgl default 16 bit short */
+        let buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
+        gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
+      }
     }
   }
 }
