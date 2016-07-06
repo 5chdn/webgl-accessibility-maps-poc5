@@ -18,7 +18,7 @@ const DEFAULT_ZOOM = 14;
 let TILE_CACHE;
 
 /* default travel time is 30 minutes */
-let TRAVEL_TIME = 1800;
+let TRAVEL_TIME = 2700;
 let TRAVEL_TYPE = 'walk';
 
 /* travel time control (r360) and a marker */
@@ -27,44 +27,16 @@ let travelTypeButtons;
 let startMarker;
 let textureImage = new Image();
 
-const COLOR_GRAD = [
-  49.0, 54.0, 149.0, 255.0, /* #313695 */
-  59.0,  85.0, 164.0, 255.0, /* #3b55a4 */
-  69.0, 117.0, 180.0, 255.0, /* #4575b4 */
-  92.0, 145.0, 194.0, 255.0, /* #5c91c2 */
-  116.0, 173.0, 209.0, 255.0, /* #74add1 */
-  143.0, 195.0, 221.0, 255.0, /* #8fc3dd */
-  171.0, 217.0, 233.0, 255.0, /* #abd9e9 */
-  197.0, 230.0, 240.0, 255.0, /* #c5e6f0 */
-  224.0, 243.0, 248.0, 255.0, /* #e0f3f8 */
-  239.0, 249.0, 219.0, 255.0, /* #eff9db */
-  255.0, 255.0, 191.0, 255.0, /* #ffffbf */
-  254.0, 239.0, 167.0, 255.0, /* #feefa7 */
-  254.0, 224.0, 144.0, 255.0, /* #fee090 */
-  253.0, 199.0, 120.0, 255.0, /* #fdc778 */
-  253.0, 174.0, 97.0, 255.0, /* #fdae61 */
-  248.0, 141.0, 82.0, 255.0, /* #f88d52 */
-  244.0, 109.0, 67.0, 255.0, /* #f46d43 */
-  229.0, 78.0, 53.0, 255.0, /* #e54e35 */
-  215.0, 48.0, 39.0, 255.0, /* #d73027 */
-  190.0, 24.0, 38.0, 255.0, /* #be1826 */
-  165.0, 0.0, 38.0, 255.0, /* #a50026 */
-  144.0, 0.0, 22.0, 255.0, /* #900016 */
-  123.0, 0.0, 11.0, 255.0, /* #7b000b */
-  102.0, 0.0, 0.0, 255.0, /* #660000 */
-  0.0, 0.0, 0.0, 0.0 /* hidden */
-];
-
 /**
  * initialize the distance map visualization
  */
 function accessibility_map() {
   'use strict';
 
-  //textureImage.src = "img/heat_gradient_discrete_1.png";
+  textureImage.src = "img/heat_gradient_discrete_1.png";
   //textureImage.src = "img/gray_scale.png";
   //textureImage.src = "img/gray-red.png";
-  textureImage.src = "img/color-brewer.png";
+  //textureImage.src = "img/color-brewer.png";
 
   r360.config.requestTimeout = 120000;
 
@@ -112,30 +84,30 @@ function accessibility_map() {
   /* use a r360 time slider to adjust travel time */
   travelTimeControl = r360.travelTimeControl({
     travelTimes: [
-      { time:  150 * 2, color: rgbToHex([COLOR_GRAD[ 0], COLOR_GRAD[ 1], COLOR_GRAD[ 2]]) },
-      { time:  300 * 2, color: rgbToHex([COLOR_GRAD[ 4], COLOR_GRAD[ 5], COLOR_GRAD[ 6]]) },
-      { time:  450 * 2, color: rgbToHex([COLOR_GRAD[ 8], COLOR_GRAD[ 9], COLOR_GRAD[10]]) },
-      { time:  600 * 2, color: rgbToHex([COLOR_GRAD[12], COLOR_GRAD[13], COLOR_GRAD[14]]) },
-      { time:  750 * 2, color: rgbToHex([COLOR_GRAD[16], COLOR_GRAD[17], COLOR_GRAD[18]]) },
-      { time:  900 * 2, color: rgbToHex([COLOR_GRAD[20], COLOR_GRAD[21], COLOR_GRAD[22]]) },
-      { time: 1050 * 2, color: rgbToHex([COLOR_GRAD[24], COLOR_GRAD[25], COLOR_GRAD[26]]) },
-      { time: 1200 * 2, color: rgbToHex([COLOR_GRAD[28], COLOR_GRAD[29], COLOR_GRAD[30]]) },
-      { time: 1350 * 2, color: rgbToHex([COLOR_GRAD[32], COLOR_GRAD[33], COLOR_GRAD[34]]) },
-      { time: 1500 * 2, color: rgbToHex([COLOR_GRAD[36], COLOR_GRAD[37], COLOR_GRAD[38]]) },
-      { time: 1650 * 2, color: rgbToHex([COLOR_GRAD[40], COLOR_GRAD[41], COLOR_GRAD[42]]) },
-      { time: 1800 * 2, color: rgbToHex([COLOR_GRAD[44], COLOR_GRAD[45], COLOR_GRAD[46]]) },
-      { time: 1950 * 2, color: rgbToHex([COLOR_GRAD[48], COLOR_GRAD[49], COLOR_GRAD[50]]) },
-      { time: 2100 * 2, color: rgbToHex([COLOR_GRAD[52], COLOR_GRAD[53], COLOR_GRAD[54]]) },
-      { time: 2250 * 2, color: rgbToHex([COLOR_GRAD[56], COLOR_GRAD[57], COLOR_GRAD[58]]) },
-      { time: 2400 * 2, color: rgbToHex([COLOR_GRAD[60], COLOR_GRAD[61], COLOR_GRAD[62]]) },
-      { time: 2550 * 2, color: rgbToHex([COLOR_GRAD[64], COLOR_GRAD[65], COLOR_GRAD[66]]) },
-      { time: 2700 * 2, color: rgbToHex([COLOR_GRAD[68], COLOR_GRAD[69], COLOR_GRAD[70]]) },
-      { time: 2850 * 2, color: rgbToHex([COLOR_GRAD[72], COLOR_GRAD[73], COLOR_GRAD[74]]) },
-      { time: 3000 * 2, color: rgbToHex([COLOR_GRAD[76], COLOR_GRAD[77], COLOR_GRAD[78]]) },
-      { time: 3150 * 2, color: rgbToHex([COLOR_GRAD[80], COLOR_GRAD[81], COLOR_GRAD[82]]) },
-      { time: 3300 * 2, color: rgbToHex([COLOR_GRAD[84], COLOR_GRAD[85], COLOR_GRAD[86]]) },
-      { time: 3450 * 2, color: rgbToHex([COLOR_GRAD[88], COLOR_GRAD[89], COLOR_GRAD[90]]) },
-      { time: 3600 * 2, color: rgbToHex([COLOR_GRAD[92], COLOR_GRAD[93], COLOR_GRAD[94]]) }
+      { time:  150 * 2, color: '#AACAAB' },
+      { time:  300 * 2, color: '#AACAAB' },
+      { time:  450 * 2, color: '#AACAAB' },
+      { time:  600 * 2, color: '#AACAAB' },
+      { time:  750 * 2, color: '#AACAAB' },
+      { time:  900 * 2, color: '#AACAAB' },
+      { time: 1050 * 2, color: '#AACAAB' },
+      { time: 1200 * 2, color: '#AACAAB' },
+      { time: 1350 * 2, color: '#AACAAB' },
+      { time: 1500 * 2, color: '#AACAAB' },
+      { time: 1650 * 2, color: '#AACAAB' },
+      { time: 1800 * 2, color: '#AACAAB' },
+      { time: 1950 * 2, color: '#AACAAB' },
+      { time: 2100 * 2, color: '#AACAAB' },
+      { time: 2250 * 2, color: '#AACAAB' },
+      { time: 2400 * 2, color: '#AACAAB' },
+      { time: 2550 * 2, color: '#AACAAB' },
+      { time: 2700 * 2, color: '#AACAAB' },
+      { time: 2850 * 2, color: '#AACAAB' },
+      { time: 3000 * 2, color: '#AACAAB' },
+      { time: 3150 * 2, color: '#AACAAB' },
+      { time: 3300 * 2, color: '#AACAAB' },
+      { time: 3450 * 2, color: '#AACAAB' },
+      { time: 3600 * 2, color: '#AACAAB' }
     ],
     unit      : ' min',
     position  : 'topright',
