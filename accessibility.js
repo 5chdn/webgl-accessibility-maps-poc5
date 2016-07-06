@@ -199,6 +199,11 @@ function accessibility_map() {
   });
 
   /* update overlay on slider events */
+  travelTimeControl.onSlideMove(function(){
+    let recentTime = TRAVEL_TIME;
+    TRAVEL_TIME = travelTimeControl.getMaxValue();
+    drawGL();
+  });
   travelTimeControl.onSlideStop(function(){
     let recentTime = TRAVEL_TIME;
     TRAVEL_TIME = travelTimeControl.getMaxValue();
