@@ -206,6 +206,10 @@ function accessibility_map() {
     drawGL();
   });
 
+  m.on('move', function(e) {
+    drawGL();
+  });
+
   m.on('moveend', function(e) {
     drawGL();
   });
