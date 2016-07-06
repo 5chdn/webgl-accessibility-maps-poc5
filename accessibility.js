@@ -353,7 +353,7 @@ function getGltfTiles(tile, zoom) {
 
       //_log(tile.x + "," + tile.y + "," + zoom)
 
-      if (tile.x == 8800 && tile.y == 5373 && zoom == 14) {
+      if (tile.x == 140820 && tile.y == 85971 && zoom == 18) {
         let _idx = gltfArraybufferCoder.encodeIndices(response.tile.gltf.buffers.indices);
         _log("indices: " + response.tile.gltf.buffers.indices.length + ", " + response.tile.gltf.buffers.indices.length * 2 + " Bytes");
         window.console.log(gltfArraybufferCoder.encodeBase64DataUri(_idx));
@@ -490,6 +490,10 @@ function drawGL() {
 
     /* translate offset to match current map position (lat/lon) */
     translateMatrix(uMatrix, -offset.x, -offset.y);
+
+    if (zoom == 18) {
+      window.console.log(uMatrix);
+    }
 
     /* set model view */
     gl.uniformMatrix4fv(sp.uniformMatrix, false, uMatrix);
