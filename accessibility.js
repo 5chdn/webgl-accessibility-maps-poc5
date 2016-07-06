@@ -12,13 +12,13 @@ let sp;
 
 /* center berlin, default zoom */
 const DEFAULT_CENTER = [52.516, 13.377];
-const DEFAULT_ZOOM = 14;
+const DEFAULT_ZOOM = 13;
 
 /* cache for all tile's vertex, index and color buffers */
 let TILE_CACHE;
 
 /* default travel time is 30 minutes */
-let TRAVEL_TIME = 2700;
+let TRAVEL_TIME = 1800;
 let TRAVEL_TYPE = 'walk';
 
 /* travel time control (r360) and a marker */
@@ -33,10 +33,11 @@ let textureImage = new Image();
 function accessibility_map() {
   'use strict';
 
-  textureImage.src = "img/heat_gradient_discrete_1.png";
-  //textureImage.src = "img/gray_scale.png";
-  //textureImage.src = "img/gray-red.png";
-  //textureImage.src = "img/color-brewer.png";
+//textureImage.src = "img/heat_gradient_discrete_0.png";
+//textureImage.src = "img/heat_gradient_discrete_1.png";
+//textureImage.src = "img/heat_gradient_discrete_2.png";
+//textureImage.src = "img/heat_gradient_discrete_3.png";
+  textureImage.src = "img/heat_gradient_discrete_4.png";
 
   r360.config.requestTimeout = 120000;
 
@@ -84,30 +85,30 @@ function accessibility_map() {
   /* use a r360 time slider to adjust travel time */
   travelTimeControl = r360.travelTimeControl({
     travelTimes: [
-      { time:  150 * 2, color: '#AACAAB' },
-      { time:  300 * 2, color: '#AACAAB' },
-      { time:  450 * 2, color: '#AACAAB' },
-      { time:  600 * 2, color: '#AACAAB' },
-      { time:  750 * 2, color: '#AACAAB' },
-      { time:  900 * 2, color: '#AACAAB' },
-      { time: 1050 * 2, color: '#AACAAB' },
-      { time: 1200 * 2, color: '#AACAAB' },
-      { time: 1350 * 2, color: '#AACAAB' },
-      { time: 1500 * 2, color: '#AACAAB' },
-      { time: 1650 * 2, color: '#AACAAB' },
-      { time: 1800 * 2, color: '#AACAAB' },
-      { time: 1950 * 2, color: '#AACAAB' },
-      { time: 2100 * 2, color: '#AACAAB' },
-      { time: 2250 * 2, color: '#AACAAB' },
-      { time: 2400 * 2, color: '#AACAAB' },
-      { time: 2550 * 2, color: '#AACAAB' },
-      { time: 2700 * 2, color: '#AACAAB' },
-      { time: 2850 * 2, color: '#AACAAB' },
-      { time: 3000 * 2, color: '#AACAAB' },
-      { time: 3150 * 2, color: '#AACAAB' },
-      { time: 3300 * 2, color: '#AACAAB' },
-      { time: 3450 * 2, color: '#AACAAB' },
-      { time: 3600 * 2, color: '#AACAAB' }
+      { time:  150 * 2, color: '#023DAD' },
+      { time:  300 * 2, color: '#0249D1' },
+      { time:  450 * 2, color: '#0358F9' },
+      { time:  600 * 2, color: '#0187FE' },
+      { time:  750 * 2, color: '#01B3FD' },
+      { time:  900 * 2, color: '#01FEE7' },
+      { time: 1050 * 2, color: '#00FFCF' },
+      { time: 1200 * 2, color: '#00FFAE' },
+      { time: 1350 * 2, color: '#00FF76' },
+      { time: 1500 * 2, color: '#01FF41' },
+      { time: 1650 * 2, color: '#13FF02' },
+      { time: 1800 * 2, color: '#44FE01' },
+      { time: 1950 * 2, color: '#6EFF02' },
+      { time: 2100 * 2, color: '#9EFF00' },
+      { time: 2250 * 2, color: '#CAFF01' },
+      { time: 2400 * 2, color: '#FAFF02' },
+      { time: 2550 * 2, color: '#FEE201' },
+      { time: 2700 * 2, color: '#FEB701' },
+      { time: 2850 * 2, color: '#FE8701' },
+      { time: 3000 * 2, color: '#FF6302' },
+      { time: 3150 * 2, color: '#FE2D01' },
+      { time: 3300 * 2, color: '#FA0402' },
+      { time: 3450 * 2, color: '#DD0301' },
+      { time: 3600 * 2, color: '#BF0301' }
     ],
     unit      : ' min',
     position  : 'topright',
