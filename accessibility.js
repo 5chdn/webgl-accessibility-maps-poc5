@@ -123,6 +123,13 @@ function accessibility_map() {
     initValue : TRAVEL_TIME / 60
   });
 
+  /* create webgl gltf tiles */
+  let gltfTiles = L.tileLayer.canvas({});
+  gltfTiles.drawTile = function(canvas, tile, zoom) {
+    getGltfTiles(tile, zoom);
+  };
+  gltfTiles.addTo(m);
+
   travelTypeButtons = r360.radioButtonControl({
     buttons: [
       {
@@ -192,13 +199,6 @@ function accessibility_map() {
     drawGL();
   });
   intersectionModeButtons.setPosition('topright');
-
-  /* create webgl gltf tiles */
-  let gltfTiles = L.tileLayer.canvas({async:false});
-  gltfTiles.drawTile = function(canvas, tile, zoom) {
-    getGltfTiles(tile, zoom);
-  };
-  gltfTiles.addTo(m);
 
   startMarker.on('dragend', function(){
     TILE_CACHE.resetHard();
@@ -418,17 +418,22 @@ function requestTile(x, y, z, callback) {
 
   let travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
-  travelOptions.setServiceUrl('https://dev.route360.net/mobie/v2/');
+  travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
   travelOptions.addSource(startMarker);
   travelOptions.addSource(auxiliaryMarker);
   travelOptions.setMaxRoutingTime(9999);
   travelOptions.setTravelType(TRAVEL_TYPE);
   travelOptions.setIntersectionMode(INTERSECTION_MODE);
+  travelOptions.setDate(20160824);
+  travelOptions.setTime(32400);
   travelOptions.setX(x);
   travelOptions.setY(y);
   travelOptions.setZ(z);
   travelOptions.setDecimalPlaces(z);
-  travelOptions.setEdgeClasses([1, 11, 12, 13, 14, 15, 16, 21, 22, 31, 32, 41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99]);
+  travelOptions.setEdgeClasses(
+    [1, 11, 12, 13, 14, 15, 16, 21, 22, 31, 32,
+      41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99]
+  );
   r360.MobieService.getGraph(travelOptions, callback);
 }
 
@@ -483,7 +488,14 @@ function drawGL() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      textureImage
+    );
     let texUnit = 5;
     gl.activeTexture(gl.TEXTURE0 + texUnit);
     gl.uniform1i(sp.textureRamp, texUnit);
@@ -533,8 +545,19 @@ function drawGL() {
       /* create texture coordinate buffer */
       let texBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, tileBuffers[i].getColorBuffer(), gl.STATIC_DRAW);
-      gl.vertexAttribPointer(sp.textureCoord, texSize, gl.FLOAT, false, 0, 0);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        tileBuffers[i].getColorBuffer(),
+        gl.STATIC_DRAW
+      );
+      gl.vertexAttribPointer(
+        sp.textureCoord,
+        texSize,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
 
       /* create index buffer */
       let idxBuffer = gl.createBuffer();
@@ -552,13 +575,23 @@ function drawGL() {
 
         let buffer = new Uint32Array(tileBuffers[i].getIndexBuffer());
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
-        gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_INT, idxBuffer);
+        gl.drawElements(
+          gl.LINES,
+          tileBuffers[i].getIndexBuffer().length,
+          gl.UNSIGNED_INT,
+          idxBuffer
+        );
       } else {
 
         /* fall back to webgl default 16 bit short */
         let buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
-        gl.drawElements(gl.LINES, tileBuffers[i].getIndexBuffer().length, gl.UNSIGNED_SHORT, idxBuffer);
+        gl.drawElements(
+          gl.LINES,
+          tileBuffers[i].getIndexBuffer().length,
+          gl.UNSIGNED_SHORT,
+          idxBuffer
+        );
       }
     }
   }
