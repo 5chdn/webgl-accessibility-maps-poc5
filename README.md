@@ -2,7 +2,7 @@ Accessibility Maps WebGL Visualization
 ======================================
 
 GPU-accelerated (JS/WebGL) rendering of network-based accessibility maps.
-#leaflet #route360 #webgl #gltf #accessibilitymaps #proofofconcept #5.
+<span>#leaflet #route360 #webgl #gltf #accessibilitymaps #proofofconcept #5.</span>
 
 
 Proof of Concept #5
@@ -12,8 +12,8 @@ Rendering of the street graph using a webgl-enabled gltf-tiling approach.
 
 ![Screenshot of Potsdam, Germany](img/screenshot-potsdam.png?raw=true "Screenshot of Potsdam, Germany")
 
-- Eurovis 2016 Short Paper: [PDF](http://www.academia.edu/download/46337528/079-083.pdf)
-- Showcase Screencast: [Youtube](https://www.youtube.com/watch?v=5TNdPxGf6Y8)
+- Eurovis 2016 Short Paper: [Academia](https://www.academia.edu/25987068/Interactive_Web-based_Visualization_for_Accessibility_Mapping_of_Transportation_Networks), [Google](https://scholar.google.de/scholar?q=related:7_slo3gc70kJ:scholar.google.com/)
+- Showcase Screencast: [Youtube](https://www.youtube.com/watch?v=5TNdPxGf6Y8), [Twitter](https://twitter.com/5chdn/status/750420233115033600)
 
 Demo
 ----
