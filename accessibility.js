@@ -20,10 +20,12 @@ let TILE_CACHE;
 /* default travel time is 60 minutes */
 let TRAVEL_TIME = 3600;
 let TRAVEL_TYPE = 'walk';
+let INTERSECTION_MODE = 'average';
 
 /* travel time control (r360) and a marker */
 let travelTimeControl;
 let travelTypeButtons;
+let intersectionModeButtons;
 let startMarker;
 let textureImage = new Image();
 
@@ -152,6 +154,39 @@ function accessibility_map() {
     drawGL();
   });
   travelTypeButtons.setPosition('topleft');
+
+  intersectionModeButtons = r360.radioButtonControl({
+    buttons: [
+      {
+        label: 'Union',
+        key: 'union',
+        tooltip: 'No intersection of polygons',
+        checked: false
+      },
+
+      {
+        label: 'Intersection',
+        key: 'intersection',
+        tooltip: 'Only intersected area shown.',
+        checked: false
+      },
+
+      {
+        label: 'Average',
+        key: 'average',
+        tooltip: 'Average travel time in polygons',
+        checked: true
+      },
+    ]
+  });
+  intersectionModeButtons.addTo(m);
+  intersectionModeButtons.onChange(function(value){
+    INTERSECTION_MODE = intersectionModeButtons.getValue();
+    TILE_CACHE.resetHard();
+    gltfTiles.redraw();
+    drawGL();
+  });
+  intersectionModeButtons.setPosition('topleft');
 
   /* create webgl gltf tiles */
   let gltfTiles = L.tileLayer.canvas({async:false});
@@ -376,6 +411,7 @@ function requestTile(x, y, z, callback) {
   travelOptions.addSource(startMarker);
   travelOptions.setMaxRoutingTime(9999);
   travelOptions.setTravelType(TRAVEL_TYPE);
+  travelOptions.setIntersectionMode(INTERSECTION_MODE);
   travelOptions.setX(x);
   travelOptions.setY(y);
   travelOptions.setZ(z);
