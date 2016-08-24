@@ -22,6 +22,9 @@ let TRAVEL_TIME = 3600;
 let TRAVEL_TYPE = 'walk';
 let INTERSECTION_MODE = 'union';
 
+/* binary geometry tiles */
+let gltfTiles;
+
 /* travel time control (r360) and a marker */
 let travelTimeControl;
 let travelTypeButtons;
@@ -124,9 +127,13 @@ function accessibility_map() {
   });
 
   /* create webgl gltf tiles */
-  let gltfTiles = L.tileLayer.canvas({});
+  gltfTiles = L.tileLayer.canvas({
+    async:true,
+    updateWhenIdle:true,
+    reuseTiles:true
+  });
   gltfTiles.drawTile = function(canvas, tile, zoom) {
-    getGltfTiles(tile, zoom);
+    getGltfTiles(tile, zoom, canvas);
   };
   gltfTiles.addTo(m);
 
@@ -370,7 +377,7 @@ function getShader(id) {
   return shader;
 }
 
-function getGltfTiles(tile, zoom) {
+function getGltfTiles(tile, zoom, canvas) {
   'use strict';
 
   /* request tile from tiling server */
@@ -401,6 +408,7 @@ function getGltfTiles(tile, zoom) {
 
       /* redraw the scene */
       drawGL();
+      gltfTiles.tileDrawn(canvas);
     }
   });
 }
