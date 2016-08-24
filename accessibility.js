@@ -17,8 +17,8 @@ const DEFAULT_ZOOM = 13;
 /* cache for all tile's vertex, index and color buffers */
 let TILE_CACHE;
 
-/* default travel time is 30 minutes */
-let TRAVEL_TIME = 1800;
+/* default travel time is 60 minutes */
+let TRAVEL_TIME = 3600;
 let TRAVEL_TYPE = 'walk';
 
 /* travel time control (r360) and a marker */
@@ -34,9 +34,9 @@ function accessibility_map() {
   'use strict';
 
 //textureImage.src = "img/squ-brown.png";
-//textureImage.src = "img/squ-violt.png";
+  textureImage.src = "img/squ-violt.png";
 //textureImage.src = "img/squ-wblue.png";
-  textureImage.src = "img/squ-yblue.png";
+//textureImage.src = "img/squ-yblue.png";
 //textureImage.src = "img/timemaps-gradient.png";
 
   r360.config.requestTimeout = 120000;
