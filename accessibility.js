@@ -20,13 +20,14 @@ let TILE_CACHE;
 /* default travel time is 60 minutes */
 let TRAVEL_TIME = 3600;
 let TRAVEL_TYPE = 'walk';
-let INTERSECTION_MODE = 'average';
+let INTERSECTION_MODE = 'union';
 
 /* travel time control (r360) and a marker */
 let travelTimeControl;
 let travelTypeButtons;
 let intersectionModeButtons;
 let startMarker;
+let auxiliaryMarker;
 let textureImage = new Image();
 
 /**
@@ -36,9 +37,9 @@ function accessibility_map() {
   'use strict';
 
 //textureImage.src = "img/squ-brown.png";
-  textureImage.src = "img/squ-violt.png";
+//textureImage.src = "img/squ-violt.png";
 //textureImage.src = "img/squ-wblue.png";
-//textureImage.src = "img/squ-yblue.png";
+  textureImage.src = "img/squ-yblue.png";
 //textureImage.src = "img/timemaps-gradient.png";
 
   r360.config.requestTimeout = 120000;
@@ -61,6 +62,10 @@ function accessibility_map() {
     iconAnchor: [16, 32]
   });
   startMarker = L.marker(DEFAULT_CENTER, {
+    draggable: true,
+    icon     : whiteIcon
+  }).addTo(m);
+  auxiliaryMarker = L.marker([52.514, 13.349], {
     draggable: true,
     icon     : whiteIcon
   }).addTo(m);
@@ -114,7 +119,7 @@ function accessibility_map() {
     ],
     unit      : ' min',
     position  : 'topright',
-    label     : 'travel time',
+    label     : '',
     initValue : TRAVEL_TIME / 60
   });
 
@@ -153,29 +158,29 @@ function accessibility_map() {
     gltfTiles.redraw();
     drawGL();
   });
-  travelTypeButtons.setPosition('topleft');
+  travelTypeButtons.setPosition('topright');
 
   intersectionModeButtons = r360.radioButtonControl({
     buttons: [
       {
-        label: 'Union',
+        label: '&cup; Union',
         key: 'union',
         tooltip: 'No intersection of polygons',
-        checked: false
+        checked: true
       },
 
       {
-        label: 'Intersection',
+        label: '&cap; Intersection',
         key: 'intersection',
         tooltip: 'Only intersected area shown.',
         checked: false
       },
 
       {
-        label: 'Average',
+        label: '&#8960; Average',
         key: 'average',
         tooltip: 'Average travel time in polygons',
-        checked: true
+        checked: false
       },
     ]
   });
@@ -186,7 +191,7 @@ function accessibility_map() {
     gltfTiles.redraw();
     drawGL();
   });
-  intersectionModeButtons.setPosition('topleft');
+  intersectionModeButtons.setPosition('topright');
 
   /* create webgl gltf tiles */
   let gltfTiles = L.tileLayer.canvas({async:false});
@@ -196,6 +201,12 @@ function accessibility_map() {
   gltfTiles.addTo(m);
 
   startMarker.on('dragend', function(){
+    TILE_CACHE.resetHard();
+    gltfTiles.redraw();
+    drawGL();
+  });
+
+  auxiliaryMarker.on('dragend', function(){
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
@@ -257,7 +268,7 @@ function accessibility_map() {
     drawGL();
   });
 
-  let zoomControl = L.control.zoom({ position: 'bottomright' });
+  let zoomControl = L.control.zoom({ position: 'topright' });
   zoomControl.addTo(m);
 }
 
@@ -409,6 +420,7 @@ function requestTile(x, y, z, callback) {
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/v2/');
   travelOptions.addSource(startMarker);
+  travelOptions.addSource(auxiliaryMarker);
   travelOptions.setMaxRoutingTime(9999);
   travelOptions.setTravelType(TRAVEL_TYPE);
   travelOptions.setIntersectionMode(INTERSECTION_MODE);

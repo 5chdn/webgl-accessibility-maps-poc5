@@ -9,10 +9,10 @@ html, body, #map {
     height: 100%
 }
 
-.mi-box {    
+.mi-box {
     position: static;
     background-color: white;
-    
+
 background-color: #E6E6E6;
 background-color: rgb(230, 230, 230);
 background-image: linear-gradient(rgb(255, 255, 255), rgb(255, 255, 255) 25%, rgb(230, 230, 230));
@@ -23,15 +23,15 @@ background-repeat: no-repeat;
     border-radius: 4px;
     -webkit-box-shadow: 0 1px 5px rgba(0,0,0,0.65);
     box-shadow: 0 1px 5px rgba(0,0,0,0.65);
-    padding: 7px;
+    padding: 6px;
     z-index:2000;
     color: black;
 
 font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-font-size: 14px;
+font-size: 13px;
 font-style: normal;
 font-variant: normal;
-font-weight: bold;
+/*font-weight: bold;*/
 /*height: 17px;*/
 line-height: normal;
 text-shadow: rgba(255, 255, 255, 0.74902) 0px 1px 1px;
@@ -47,7 +47,7 @@ text-shadow: rgba(255, 255, 255, 0.74902) 0px 1px 1px;
 .travel-type-options {
 
     background-color: white;
-    
+
 background-color: #E6E6E6;
 background-color: rgb(230, 230, 230);
 background-image: linear-gradient(rgb(255, 255, 255), rgb(255, 255, 255) 25%, rgb(230, 230, 230));
@@ -120,7 +120,7 @@ background-repeat: no-repeat;
 }
 
 .btn-autocomplete {
-    
+
     color: #333;
     background-color: #fff;
     border-color: #DADADA;
@@ -128,7 +128,7 @@ background-repeat: no-repeat;
 }
 
 .btn-autocomplete:hover, .btn-autocomplete:focus, .btn-autocomplete:active, .btn-autocomplete.active {
-    
+
     color: #333;
     background-color: #EEEEEE;
     border-color: #DADADA;
@@ -140,24 +140,24 @@ background-repeat: no-repeat;
 }
 
 .leaflet-traveltime-slider-min {
-    width: 100px; 
+    width: 100px;
     margin-top:6px;
 }
 .leaflet-traveltime-slider-container-min{
-    height: 55px; 
+    height: 55px;
 }
 
 .leaflet-traveltime-slider-max{
-    width: 160px; 
+    width: 160px;
     float: left;
-    margin: 5px;
+    margin: 3px;
 }
 .travel-time-info-max{
     float:left;
     color: black;
 }
 .leaflet-traveltime-slider-container-max {
-    height: 17px; 
+    height: 14px;
 }
 
 .no-border{
