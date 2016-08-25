@@ -22,6 +22,16 @@ Beware of the [bug](https://github.com/5chdn/webgl-accessibility-maps-poc5/issue
 
   - http://5chdn.github.io/webgl-accessibility-maps-poc5
 
+Requires:
+
+  - WebGL 1.0 context (might has to be enabled in browser)
+  - ECMAScript 6 (2015) / JavaScript 1.7
+
+Does not work with:
+
+  - Internet Explorer 8, 9 and 10 (upgrade to 11 or Edge)
+  - Safari 7, 8 and 9 (upgrade to 10 or TP)
+
 Credits
 -------
 
