@@ -16,6 +16,7 @@ const DEFAULT_ZOOM = 13;
 
 /* cache for all tile's vertex, index and color buffers */
 let TILE_CACHE;
+let TILE_GUID = guid();
 
 /* default travel time is 60 minutes */
 let TRAVEL_TIME = 3600;
@@ -172,6 +173,7 @@ function accessibility_map() {
   travelTypeButtons.addTo(m);
   travelTypeButtons.onChange(function(value){
     TRAVEL_TYPE = travelTypeButtons.getValue();
+    TILE_GUID = guid();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
@@ -205,6 +207,7 @@ function accessibility_map() {
   intersectionModeButtons.addTo(m);
   intersectionModeButtons.onChange(function(value){
     INTERSECTION_MODE = intersectionModeButtons.getValue();
+    TILE_GUID = guid();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
@@ -212,12 +215,14 @@ function accessibility_map() {
   intersectionModeButtons.setPosition('topright');
 
   startMarker.on('dragend', function(){
+    TILE_GUID = guid();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
   });
 
   auxiliaryMarker.on('dragend', function(){
+    TILE_GUID = guid();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
@@ -385,16 +390,17 @@ function getGltfTiles(tile, zoom, canvas) {
   'use strict';
 
   /* request tile from tiling server */
-  requestTile(tile.x, tile.y, zoom, function(response){
+  requestTile(tile.x, tile.y, zoom, function(data, id){
 
-    if (response.tile.gltf.buffers.vertices.length > 0 &&
-      response.tile.gltf.buffers.indices.length > 0) {
+    if (data.tile.gltf.buffers.vertices.length > 0 &&
+      data.tile.gltf.buffers.indices.length > 0 &&
+      id.localeCompare(TILE_GUID) == 0) {
 
       /* create a tile buffer object for the current tile */
       let tileBuffer = L.tileBuffer(
-        response.tile.gltf.buffers.vertices,
-        response.tile.gltf.buffers.indices,
-        response.tile.gltf.buffers.times,
+        data.tile.gltf.buffers.vertices,
+        data.tile.gltf.buffers.indices,
+        data.tile.gltf.buffers.times,
         {
           x: tile.x,
           y: tile.y,
@@ -446,7 +452,7 @@ function requestTile(x, y, z, callback) {
     [1, 11, 12, 13, 14, 15, 16, 21, 22, 31, 32,
       41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99]
   );
-  r360.MobieService.getGraph(travelOptions, callback);
+  r360.MobieService.getGraph(TILE_GUID, travelOptions, callback);
 }
 
 /**
@@ -655,12 +661,15 @@ function latLonToPixels(lat, lon) {
   return L.point(pixelX, pixelY);
 }
 
-function rgbToHex(rgb) {
-  let red = rgb[0];
-  let grn = rgb[1];
-  let blu = rgb[2];
-  let hex = blu | (grn << 8) | (red << 16);
-  return '#' + (0x1000000 + hex).toString(16).slice(1);
+function guid() {
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+    s4() + '-' + s4() + s4() + s4();
+}
+
+function s4() {
+  return Math.floor((1 + Math.random()) * 0x10000)
+    .toString(16)
+    .substring(1);
 }
 
 /**
