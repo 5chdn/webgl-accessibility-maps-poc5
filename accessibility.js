@@ -83,14 +83,18 @@ function accessibility_map() {
   initGL(c);
   initShaders();
 
+  let attribution =
+    '<a href="https://carto.com/location-data-services/basemaps/">CartoDB</a> | '
+    + '<a href="https://developers.route360.net/index.html">R360 API</a> | '
+    + 'Rendering &copy; <a href="./LICENSE">Schoedon</a>';
   let bgTiles = L.tileLayer(
     'http://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
     {
+      attribution: attribution,
       subdomains: 'abcd',
       maxZoom: 18
     }
   ).addTo(m);
-
 
   /* use a r360 time slider to adjust travel time */
   travelTimeControl = r360.travelTimeControl({
