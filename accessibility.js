@@ -390,17 +390,17 @@ function getGltfTiles(tile, zoom, canvas) {
   'use strict';
 
   /* request tile from tiling server */
-  requestTile(tile.x, tile.y, zoom, function(data, id){
+  requestTile(tile.x, tile.y, zoom, function(response){
 
-    if (data.tile.gltf.buffers.vertices.length > 0 &&
-      data.tile.gltf.buffers.indices.length > 0 &&
-      id.localeCompare(TILE_GUID) == 0) {
+    if (response.data.tile.gltf.buffers.vertices.length > 0 &&
+      response.data.tile.gltf.buffers.indices.length > 0 &&
+      response.id.localeCompare(TILE_GUID) == 0) {
 
       /* create a tile buffer object for the current tile */
       let tileBuffer = L.tileBuffer(
-        data.tile.gltf.buffers.vertices,
-        data.tile.gltf.buffers.indices,
-        data.tile.gltf.buffers.times,
+        response.data.tile.gltf.buffers.vertices,
+        response.data.tile.gltf.buffers.indices,
+        response.data.tile.gltf.buffers.times,
         {
           x: tile.x,
           y: tile.y,
