@@ -68,8 +68,8 @@
 
       void main(void) {
         float t_coord = v_coord / 2.0;
-        if (v_coord > u_time) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); /* hide unreachable roads */
+        if (v_coord < 0.0 || v_coord > u_time) {
+          discard; /* hide unreachable roads */
         } else {
           gl_FragColor = texture2D(u_texture, vec2(abs(t_coord), 0.5));
         }
