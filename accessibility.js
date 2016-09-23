@@ -14,10 +14,6 @@ let sp;
 const DEFAULT_CENTER = [52.516, 13.377];
 const DEFAULT_ZOOM = 13;
 
-/* cache for all tile's vertex, index and color buffers */
-let TILE_CACHE;
-let TILE_GUID = guid();
-
 /* default travel time is 60 minutes */
 let TRAVEL_TIME = 3600;
 let TRAVEL_TYPE = 'walk';
@@ -33,6 +29,10 @@ let intersectionModeButtons;
 let startMarker;
 let auxiliaryMarker;
 let textureImage = new Image();
+
+/* cache for all tile's vertex, index and color buffers */
+let TILE_CACHE;
+let TILE_SHA1_ID;
 
 /**
  * initialize the distance map visualization
@@ -73,6 +73,8 @@ function accessibility_map() {
     draggable: true,
     icon     : whiteIcon
   }).addTo(m);
+
+  TILE_SHA1_ID = sha1id();
 
   /* setup leaflet canvas webgl overlay */
   o = L.canvasOverlay().drawing(drawGL(true)).addTo(m);
@@ -173,7 +175,7 @@ function accessibility_map() {
   travelTypeButtons.addTo(m);
   travelTypeButtons.onChange(function(value){
     TRAVEL_TYPE = travelTypeButtons.getValue();
-    TILE_GUID = guid();
+    TILE_SHA1_ID = sha1id();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
@@ -207,7 +209,7 @@ function accessibility_map() {
   intersectionModeButtons.addTo(m);
   intersectionModeButtons.onChange(function(value){
     INTERSECTION_MODE = intersectionModeButtons.getValue();
-    TILE_GUID = guid();
+    TILE_SHA1_ID = sha1id();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
@@ -215,14 +217,14 @@ function accessibility_map() {
   intersectionModeButtons.setPosition('topright');
 
   startMarker.on('dragend', function(){
-    TILE_GUID = guid();
+    TILE_SHA1_ID = sha1id();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
   });
 
   auxiliaryMarker.on('dragend', function(){
-    TILE_GUID = guid();
+    TILE_SHA1_ID = sha1id();
     TILE_CACHE.resetHard();
     gltfTiles.redraw();
     drawGL();
@@ -394,7 +396,7 @@ function getGltfTiles(tile, zoom, canvas) {
 
     if (response.data.tile.gltf.buffers.vertices.length > 0 &&
       response.data.tile.gltf.buffers.indices.length > 0 &&
-      response.id.localeCompare(TILE_GUID) == 0) {
+      response.id.localeCompare(TILE_SHA1_ID) == 0) {
 
       /* create a tile buffer object for the current tile */
       let tileBuffer = L.tileBuffer(
@@ -452,7 +454,7 @@ function requestTile(x, y, z, callback) {
     [1, 11, 12, 13, 14, 15, 16, 21, 22, 31, 32,
       41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99]
   );
-  r360.MobieService.getGraph(TILE_GUID, travelOptions, callback);
+  r360.MobieService.getGraph(TILE_SHA1_ID, travelOptions, callback);
 }
 
 /**
@@ -661,15 +663,12 @@ function latLonToPixels(lat, lon) {
   return L.point(pixelX, pixelY);
 }
 
-function guid() {
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-    s4() + '-' + s4() + s4() + s4();
-}
-
-function s4() {
-  return Math.floor((1 + Math.random()) * 0x10000)
-    .toString(16)
-    .substring(1);
+function sha1id() {
+  let hashMe = startMarker.getLatLng() + ";"
+    + auxiliaryMarker.getLatLng() + ";"
+    + TRAVEL_TYPE + ";"
+    + INTERSECTION_MODE + ";";
+  return Sha1.hash(hashMe);
 }
 
 /**
