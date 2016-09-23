@@ -236,14 +236,12 @@ function accessibility_map() {
   });
 
   /* update overlay on slider events */
-  travelTimeControl.onSlideMove(function(){
-    let recentTime = TRAVEL_TIME;
-    TRAVEL_TIME = travelTimeControl.getMaxValue();
+  travelTimeControl.onSlideMove(function(values){
+    TRAVEL_TIME = values[values.length - 1].time;
     drawGL();
   });
-  travelTimeControl.onSlideStop(function(){
-    let recentTime = TRAVEL_TIME;
-    TRAVEL_TIME = travelTimeControl.getMaxValue();
+  travelTimeControl.onSlideStop(function(values){
+    TRAVEL_TIME = values[values.length - 1].time;
     drawGL();
   });
   travelTimeControl.addTo(m);
