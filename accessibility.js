@@ -525,73 +525,76 @@ function drawGL() {
     let tileBuffers = TILE_CACHE.getTileBufferCollection();
     for (let i = TILE_CACHE.getSize() - 1; i >= 0; i -= 1) {
 
-      /* create vertex buffer */
-      let vtxBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
-      gl.bufferData(
-        gl.ARRAY_BUFFER,
-        tileBuffers[i].getVertexBuffer(),
-        gl.STATIC_DRAW
-      );
-      gl.vertexAttribPointer(
-        sp.vertexPosition,
-        vtxSize,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
+      if(tileBuffers[i].getZoom() == m.getZoom()) {
 
-      /* create texture coordinate buffer */
-      let texBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-      gl.bufferData(
-        gl.ARRAY_BUFFER,
-        tileBuffers[i].getColorBuffer(),
-        gl.STATIC_DRAW
-      );
-      gl.vertexAttribPointer(
-        sp.textureCoord,
-        texSize,
-        gl.FLOAT,
-        false,
-        0,
-        0
-      );
-
-      /* create index buffer */
-      let idxBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
-
-      /* draw geometry lines by indices */
-      if (tileBuffers[i].getIndexBuffer().length > 65535) {
-
-        /* use 32 bit extension */
-        let ext = (
-          gl.getExtension('OES_element_index_uint') ||
-          gl.getExtension('MOZ_OES_element_index_uint') ||
-          gl.getExtension('WEBKIT_OES_element_index_uint')
+        /* create vertex buffer */
+        let vtxBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          tileBuffers[i].getVertexBuffer(),
+          gl.STATIC_DRAW
+        );
+        gl.vertexAttribPointer(
+          sp.vertexPosition,
+          vtxSize,
+          gl.FLOAT,
+          false,
+          0,
+          0
         );
 
-        let buffer = new Uint32Array(tileBuffers[i].getIndexBuffer());
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
-        gl.drawElements(
-          gl.LINES,
-          tileBuffers[i].getIndexBuffer().length,
-          gl.UNSIGNED_INT,
-          idxBuffer
+        /* create texture coordinate buffer */
+        let texBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          tileBuffers[i].getColorBuffer(),
+          gl.STATIC_DRAW
         );
-      } else {
+        gl.vertexAttribPointer(
+          sp.textureCoord,
+          texSize,
+          gl.FLOAT,
+          false,
+          0,
+          0
+        );
 
-        /* fall back to webgl default 16 bit short */
-        let buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
-        gl.drawElements(
-          gl.LINES,
-          tileBuffers[i].getIndexBuffer().length,
-          gl.UNSIGNED_SHORT,
-          idxBuffer
-        );
+        /* create index buffer */
+        let idxBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
+
+        /* draw geometry lines by indices */
+        if (tileBuffers[i].getIndexBuffer().length > 65535) {
+
+          /* use 32 bit extension */
+          let ext = (
+            gl.getExtension('OES_element_index_uint') ||
+            gl.getExtension('MOZ_OES_element_index_uint') ||
+            gl.getExtension('WEBKIT_OES_element_index_uint')
+          );
+
+          let buffer = new Uint32Array(tileBuffers[i].getIndexBuffer());
+          gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
+          gl.drawElements(
+            gl.LINES,
+            tileBuffers[i].getIndexBuffer().length,
+            gl.UNSIGNED_INT,
+            idxBuffer
+          );
+        } else {
+
+          /* fall back to webgl default 16 bit short */
+          let buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
+          gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
+          gl.drawElements(
+            gl.LINES,
+            tileBuffers[i].getIndexBuffer().length,
+            gl.UNSIGNED_SHORT,
+            idxBuffer
+          );
+        }
       }
     }
   }
