@@ -40,12 +40,10 @@ let TILE_SHA1_ID;
 function accessibility_map() {
   'use strict';
 
-//textureImage.src = "img/squ-brown.png";
-//textureImage.src = "img/squ-violt.png";
-//textureImage.src = "img/squ-wblue.png";
+  /* yellow-blue sequence */
   textureImage.src = "img/squ-yblue.png";
-//textureImage.src = "img/timemaps-gradient.png";
 
+  /* workaround for slow devel server */
   r360.config.requestTimeout = 120000;
 
   /* leaflet map canvas */
@@ -256,14 +254,6 @@ function accessibility_map() {
     drawGL();
   });
 
-  m.on('zoomlevelschange', function(e) {
-    drawGL();
-  });
-
-  m.on('zoomend', function(e) {
-    drawGL();
-  });
-
   m.on('movestart', function(e) {
     drawGL();
   });
@@ -273,14 +263,6 @@ function accessibility_map() {
   });
 
   m.on('moveend', function(e) {
-    drawGL();
-  });
-
-  m.on('dragstart', function(e) {
-    drawGL();
-  });
-
-  m.on('dragend', function(e) {
     drawGL();
   });
 
@@ -294,7 +276,7 @@ function accessibility_map() {
 function initGL(canvas) {
   'use strict';
 
-  gl = canvas.getContext('experimental-webgl', { antialias: true });
+  gl = canvas.getContext('experimental-webgl', { antialias: false });
 }
 
 /**
@@ -439,7 +421,7 @@ function requestTile(x, y, z, callback) {
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
   travelOptions.addSource(startMarker);
   travelOptions.addSource(auxiliaryMarker);
-  travelOptions.setMaxRoutingTime(9999);
+  travelOptions.setMaxRoutingTime(7200);
   travelOptions.setTravelType(TRAVEL_TYPE);
   travelOptions.setIntersectionMode(INTERSECTION_MODE);
   travelOptions.setDate(20160824);
