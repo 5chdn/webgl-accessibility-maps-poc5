@@ -10,13 +10,16 @@ let c;
 let gl;
 let sp;
 
+const MEASURE_TRANSMISSION = true;
+const MEASURE_RENDERING = true;
+
 /* center berlin, default zoom */
 const DEFAULT_CENTER = [52.516, 13.377];
-const DEFAULT_ZOOM = 13;
+const DEFAULT_ZOOM = 10;
 
-/* default travel time is 60 minutes */
-let TRAVEL_TIME = 3600;
-let TRAVEL_TYPE = 'walk';
+/* default travel time is 120 minutes */
+let TRAVEL_TIME = 7200;
+let TRAVEL_TYPE = 'transit';
 let INTERSECTION_MODE = 'union';
 
 /* binary geometry tiles */
@@ -27,7 +30,7 @@ let travelTimeControl;
 let travelTypeButtons;
 let intersectionModeButtons;
 let startMarker;
-let auxiliaryMarker;
+//let auxiliaryMarker;
 let textureImage = new Image();
 
 /* cache for all tile's vertex, index and color buffers */
@@ -67,10 +70,10 @@ function accessibility_map() {
     draggable: true,
     icon     : whiteIcon
   }).addTo(m);
-  auxiliaryMarker = L.marker([52.514, 13.349], {
-    draggable: true,
-    icon     : whiteIcon
-  }).addTo(m);
+  //auxiliaryMarker = L.marker([52.514, 13.349], {
+  //  draggable: true,
+  //  icon     : whiteIcon
+  //}).addTo(m);
 
   TILE_SHA1_ID = sha1id();
 
@@ -148,7 +151,7 @@ function accessibility_map() {
         label: '<i class="fa fa-female"></i>  Walking',
         key: 'walk',
         tooltip: 'Walking speed is on average 5km/h',
-        checked: true
+        checked: false
       },
       {
         label: '<i class="fa fa-bicycle"></i> Cycling',
@@ -166,7 +169,7 @@ function accessibility_map() {
         label: '<i class="fa fa-bus"></i> Transit',
         key: 'transit',
         tooltip: 'This demo only contains subways',
-        checked: false
+        checked: true
       }
     ]
   });
@@ -221,12 +224,12 @@ function accessibility_map() {
     drawGL();
   });
 
-  auxiliaryMarker.on('dragend', function(){
-    TILE_SHA1_ID = sha1id();
-    TILE_CACHE.resetHard();
-    gltfTiles.redraw();
-    drawGL();
-  });
+  //auxiliaryMarker.on('dragend', function(){
+  //  TILE_SHA1_ID = sha1id();
+  //  TILE_CACHE.resetHard();
+  //  gltfTiles.redraw();
+  //  drawGL();
+  //});
 
   /* redraw the scene after all tiles are loaded */
   gltfTiles.on('load', function(e) {
@@ -371,8 +374,12 @@ function getShader(id) {
 function getGltfTiles(tile, zoom, canvas) {
   'use strict';
 
+  // if (MEASURE_TRANSMISSION) window.console.time("getGltfTiles," + tile.x + "," + tile.y + "," + zoom);
+
   /* request tile from tiling server */
   requestTile(tile.x, tile.y, zoom, function(response){
+
+    if (MEASURE_TRANSMISSION) window.console.timeEnd("getGltfTiles.response," + tile.x + "," + tile.y + "," + zoom);
 
     if (response.data.tile.gltf.buffers.vertices.length > 0 &&
       response.data.tile.gltf.buffers.indices.length > 0 &&
@@ -401,6 +408,9 @@ function getGltfTiles(tile, zoom, canvas) {
       /* redraw the scene */
       drawGL();
       gltfTiles.tileDrawn(canvas);
+
+
+      // if (MEASURE_TRANSMISSION) window.console.timeEnd("getGltfTiles," + tile.x + "," + tile.y + "," + zoom);
     }
   });
 }
@@ -420,7 +430,7 @@ function requestTile(x, y, z, callback) {
   travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
   travelOptions.addSource(startMarker);
-  travelOptions.addSource(auxiliaryMarker);
+  //travelOptions.addSource(auxiliaryMarker);
   travelOptions.setMaxRoutingTime(7200);
   travelOptions.setTravelType(TRAVEL_TYPE);
   travelOptions.setIntersectionMode(INTERSECTION_MODE);
@@ -434,6 +444,9 @@ function requestTile(x, y, z, callback) {
     [1, 11, 12, 13, 14, 15, 16, 21, 22, 31, 32,
       41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99]
   );
+
+  if (MEASURE_TRANSMISSION) window.console.time("getGltfTiles.response," + x + "," + y + "," + z);
+
   r360.MobieService.getGraph(TILE_SHA1_ID, travelOptions, callback);
 }
 
@@ -445,6 +458,8 @@ function drawGL() {
 
   /* only proceed if context is available */
   if (gl) {
+
+    if (MEASURE_RENDERING) window.console.time("drawGL");
 
     /* enable blending */
     gl.enable(gl.BLEND);
@@ -527,6 +542,8 @@ function drawGL() {
 
       if(tileBuffers[i].getZoom() == m.getZoom()) {
 
+        if (MEASURE_RENDERING) window.console.time("drawGL.tile," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+
         /* create vertex buffer */
         let vtxBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
@@ -568,6 +585,8 @@ function drawGL() {
         /* draw geometry lines by indices */
         if (tileBuffers[i].getIndexBuffer().length > 65535) {
 
+          if (MEASURE_RENDERING) window.console.time("drawGL.tile.x32," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+
           /* use 32 bit extension */
           let ext = (
             gl.getExtension('OES_element_index_uint') ||
@@ -583,7 +602,11 @@ function drawGL() {
             gl.UNSIGNED_INT,
             idxBuffer
           );
+
+          if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile.x32," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
         } else {
+
+          if (MEASURE_RENDERING) window.console.time("drawGL.tile.x16," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
 
           /* fall back to webgl default 16 bit short */
           let buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
@@ -594,9 +617,16 @@ function drawGL() {
             gl.UNSIGNED_SHORT,
             idxBuffer
           );
+
+          gl.finish();
+          if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile.x16," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
         }
+        gl.finish();
+        if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
       }
     }
+    gl.finish();
+    if (MEASURE_RENDERING) window.console.timeEnd("drawGL");
   }
 }
 
@@ -648,7 +678,7 @@ function latLonToPixels(lat, lon) {
 
 function sha1id() {
   let hashMe = startMarker.getLatLng() + ";"
-    + auxiliaryMarker.getLatLng() + ";"
+    //+ auxiliaryMarker.getLatLng() + ";"
     + TRAVEL_TYPE + ";"
     + INTERSECTION_MODE + ";";
   return Sha1.hash(hashMe);

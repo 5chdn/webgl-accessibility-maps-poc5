@@ -69,11 +69,9 @@
       void main(void) {
         float t_coord = v_coord / 2.0;
         if (v_coord < 0.0 || v_coord > u_time) {
-          //discard; /* hide unreachable roads */
-          gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+          discard; /* hide unreachable roads */
         } else {
-          discard;
-          //gl_FragColor = texture2D(u_texture, vec2(abs(t_coord), 0.5));
+          gl_FragColor = texture2D(u_texture, vec2(abs(t_coord), 0.5));
         }
       }
     </script>
