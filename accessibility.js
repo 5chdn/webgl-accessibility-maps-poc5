@@ -427,7 +427,7 @@ function requestTile(x, y, z, callback) {
   'use strict';
 
   let travelOptions = r360.travelOptions();
-  travelOptions.setServiceKey('uhWrWpUhyZQy8rPfiC7X');
+  travelOptions.setServiceKey('ZTOCBA4MNLQLQQPXHQDW');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
   travelOptions.addSource(startMarker);
   //travelOptions.addSource(auxiliaryMarker);
