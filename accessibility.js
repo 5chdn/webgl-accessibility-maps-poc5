@@ -595,6 +595,13 @@ function drawGL() {
             gl.getExtension('WEBKIT_OES_element_index_uint')
           );
 
+          // catch issue #33
+          if (tileBuffers[i].getIndexBuffer().length < 1 || // should never happen due to line:587
+              tileBuffers[i].getIndexBuffer().length > 1000000000 || // we dont have buffers of that size
+              tileBuffers[i].getIndexBuffer() === undefined) { // should never happen due to line:587
+            _log("ERR#33: " + tileBuffers[i].getIndexBuffer().length);
+          }
+
           let buffer = new Uint32Array(tileBuffers[i].getIndexBuffer());
           gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
           gl.drawElements(
