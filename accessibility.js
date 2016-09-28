@@ -10,12 +10,13 @@ let c;
 let gl;
 let sp;
 
-const MEASURE_TRANSMISSION = true;
+const MEASURE_TRANSMISSION = false;
 const MEASURE_RENDERING = true;
+let MEASURE_ID = 0;
 
 /* center berlin, default zoom */
 const DEFAULT_CENTER = [52.516, 13.377];
-const DEFAULT_ZOOM = 10;
+const DEFAULT_ZOOM = 0;
 
 /* default travel time is 120 minutes */
 let TRAVEL_TIME = 7200;
@@ -51,8 +52,8 @@ function accessibility_map() {
 
   /* leaflet map canvas */
   m = L.map('map', {
-    minZoom:  4,
-    maxZoom: 18,
+    minZoom:  0,
+    maxZoom: 99,
     maxBounds: L.latLngBounds(L.latLng(49.6, 6.0), L.latLng(54.8, 20.4)),
     noWrap: true,
     continuousWorld: false,
@@ -207,7 +208,7 @@ function accessibility_map() {
       },
     ]
   });
-  intersectionModeButtons.addTo(m);
+  //intersectionModeButtons.addTo(m);
   intersectionModeButtons.onChange(function(value){
     INTERSECTION_MODE = intersectionModeButtons.getValue();
     TILE_SHA1_ID = sha1id();
@@ -245,7 +246,7 @@ function accessibility_map() {
     TRAVEL_TIME = values[values.length - 1].time;
     drawGL();
   });
-  travelTimeControl.addTo(m);
+  //travelTimeControl.addTo(m);
   travelTimeControl.setPosition('topright');
 
   /* init cache for tile buffers for current zoom level */
@@ -270,7 +271,7 @@ function accessibility_map() {
   });
 
   let zoomControl = L.control.zoom({ position: 'topright' });
-  zoomControl.addTo(m);
+  //zoomControl.addTo(m);
 }
 
 /**
@@ -279,7 +280,7 @@ function accessibility_map() {
 function initGL(canvas) {
   'use strict';
 
-  gl = canvas.getContext('experimental-webgl', { antialias: false });
+  gl = canvas.getContext('experimental-webgl', { antialias: true });
 }
 
 /**
@@ -459,7 +460,7 @@ function drawGL() {
   /* only proceed if context is available */
   if (gl) {
 
-    if (MEASURE_RENDERING) window.console.time("drawGL");
+    // if (MEASURE_RENDERING) window.console.time("drawGL");
 
     /* enable blending */
     gl.enable(gl.BLEND);
@@ -542,7 +543,7 @@ function drawGL() {
 
       if(tileBuffers[i].getZoom() == m.getZoom()) {
 
-        if (MEASURE_RENDERING) window.console.time("drawGL.tile," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+        if (MEASURE_RENDERING) window.console.time(MEASURE_ID + "," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom() + "," + (tileBuffers[i].getVertexBuffer().length/2.0));
 
         /* create vertex buffer */
         let vtxBuffer = gl.createBuffer();
@@ -585,7 +586,7 @@ function drawGL() {
         /* draw geometry lines by indices */
         if (tileBuffers[i].getIndexBuffer().length > 65535) {
 
-          if (MEASURE_RENDERING) window.console.time("drawGL.tile.x32," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+          // if (MEASURE_RENDERING) window.console.time("drawGL.tile.x32," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
 
           /* use 32 bit extension */
           let ext = (
@@ -603,10 +604,10 @@ function drawGL() {
             idxBuffer
           );
 
-          if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile.x32," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+          // if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile.x32," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
         } else {
 
-          if (MEASURE_RENDERING) window.console.time("drawGL.tile.x16," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+          // if (MEASURE_RENDERING) window.console.time("drawGL.tile.x16," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
 
           /* fall back to webgl default 16 bit short */
           let buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
@@ -619,14 +620,17 @@ function drawGL() {
           );
 
           gl.finish();
-          if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile.x16," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+          // if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile.x16," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
         }
         gl.finish();
-        if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+        if (MEASURE_RENDERING) {
+          window.console.timeEnd(MEASURE_ID + "," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom() + "," + (tileBuffers[i].getVertexBuffer().length/2.0));
+          ++MEASURE_ID;
+        }
       }
     }
     gl.finish();
-    if (MEASURE_RENDERING) window.console.timeEnd("drawGL");
+    // if (MEASURE_RENDERING) window.console.timeEnd("drawGL");
   }
 }
 
