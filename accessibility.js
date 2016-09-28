@@ -11,16 +11,16 @@ let gl;
 let sp;
 
 const MEASURE_TRANSMISSION = false;
-const MEASURE_RENDERING = true;
+const MEASURE_RENDERING = false;
 let MEASURE_ID = 0;
 
 /* center berlin, default zoom */
-const DEFAULT_CENTER = [52.516, 13.377];
-const DEFAULT_ZOOM = 0;
+const DEFAULT_CENTER = [52.516285, 13.386181];
+const DEFAULT_ZOOM = 10;
 
 /* default travel time is 120 minutes */
 let TRAVEL_TIME = 7200;
-let TRAVEL_TYPE = 'transit';
+let TRAVEL_TYPE = 'bike';
 let INTERSECTION_MODE = 'union';
 
 /* binary geometry tiles */
@@ -45,7 +45,7 @@ function accessibility_map() {
   'use strict';
 
   /* yellow-blue sequence */
-  textureImage.src = "img/squ-yblue.png";
+  textureImage.src = "img/mi-r360.png";
 
   /* workaround for slow devel server */
   r360.config.requestTimeout = 120000;
@@ -63,9 +63,9 @@ function accessibility_map() {
   /* set viewport to berlin */
   m.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   let whiteIcon = L.icon({
-    iconUrl   : 'img/map-marker-point-64.png',
-    iconSize  : [32, 32],
-    iconAnchor: [16, 32]
+    iconUrl   : 'img/marker_source.svg',
+    iconSize  : [28, 40],
+    iconAnchor: [14, 40]
   });
   startMarker = L.marker(DEFAULT_CENTER, {
     draggable: true,
@@ -93,7 +93,7 @@ function accessibility_map() {
     + '<a href="https://developers.route360.net/index.html">R360 API</a> | '
     + 'Rendering &copy; <a href="./LICENSE">Schoedon</a>';
   let bgTiles = L.tileLayer(
-    'http://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png',
+    'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
     {
       attribution: attribution,
       subdomains: 'abcd',
@@ -158,7 +158,7 @@ function accessibility_map() {
         label: '<i class="fa fa-bicycle"></i> Cycling',
         key: 'bike',
         tooltip: 'Cycling speed is on average 15km/h',
-        checked: false
+        checked: true
       },
       {
         label: '<i class="fa fa-car"></i> Car',
@@ -170,7 +170,7 @@ function accessibility_map() {
         label: '<i class="fa fa-bus"></i> Transit',
         key: 'transit',
         tooltip: 'This demo only contains subways',
-        checked: true
+        checked: false
       }
     ]
   });
@@ -182,7 +182,7 @@ function accessibility_map() {
     gltfTiles.redraw();
     drawGL();
   });
-  travelTypeButtons.setPosition('topright');
+  travelTypeButtons.setPosition('topleft');
 
   intersectionModeButtons = r360.radioButtonControl({
     buttons: [
@@ -246,7 +246,7 @@ function accessibility_map() {
     TRAVEL_TIME = values[values.length - 1].time;
     drawGL();
   });
-  //travelTimeControl.addTo(m);
+  travelTimeControl.addTo(m);
   travelTimeControl.setPosition('topright');
 
   /* init cache for tile buffers for current zoom level */
@@ -270,8 +270,8 @@ function accessibility_map() {
     drawGL();
   });
 
-  let zoomControl = L.control.zoom({ position: 'topright' });
-  //zoomControl.addTo(m);
+  let zoomControl = L.control.zoom({ position: 'bottomright' });
+  zoomControl.addTo(m);
 }
 
 /**
@@ -380,7 +380,10 @@ function getGltfTiles(tile, zoom, canvas) {
   /* request tile from tiling server */
   requestTile(tile.x, tile.y, zoom, function(response){
 
-    if (MEASURE_TRANSMISSION) window.console.timeEnd("getGltfTiles.response," + tile.x + "," + tile.y + "," + zoom);
+    if (MEASURE_TRANSMISSION) {
+      window.console.timeEnd("0," + tile.x + "," + tile.y + "," + zoom);
+      window.console.log(";;;" + (response.data.tile.gltf.buffers.vertices.length/2.0) + "," + response.requestTime + "," + JSON.stringify(response).length);
+    }
 
     if (response.data.tile.gltf.buffers.vertices.length > 0 &&
       response.data.tile.gltf.buffers.indices.length > 0 &&
@@ -446,7 +449,7 @@ function requestTile(x, y, z, callback) {
       41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99]
   );
 
-  if (MEASURE_TRANSMISSION) window.console.time("getGltfTiles.response," + x + "," + y + "," + z);
+  if (MEASURE_TRANSMISSION) window.console.time("0," + x + "," + y + "," + z);
 
   r360.MobieService.getGraph(TILE_SHA1_ID, travelOptions, callback);
 }
@@ -584,7 +587,7 @@ function drawGL() {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
 
         // catch issue #33
-        _log("DEBUG#33: " + tileBuffers[i].getIndexBuffer().length);
+        //_log("DEBUG#33: " + tileBuffers[i].getIndexBuffer().length);
 
         /* draw geometry lines by indices */
         if (tileBuffers[i].getIndexBuffer().length > 65535) {
