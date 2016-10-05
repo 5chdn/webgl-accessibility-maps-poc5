@@ -280,7 +280,7 @@ function accessibility_map() {
 function initGL(canvas) {
   'use strict';
 
-  gl = canvas.getContext('experimental-webgl', { antialias: true });
+  gl = canvas.getContext('experimental-webgl', { antialias: false });
 }
 
 /**
