@@ -656,6 +656,8 @@ function drawGL() {
     document.getElementById("frames").innerHTML = fps;
     document.getElementById("vertex").innerHTML = vc;
     document.getElementById("index").innerHTML = ic;
+    document.getElementById("tiles").innerHTML = TILE_CACHE.getSize();
+    document.getElementById("hash").innerHTML = TILE_SHA1_ID;
   }
 }
 

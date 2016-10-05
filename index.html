@@ -28,10 +28,10 @@
     <style>
       html { min-height: 100% }
       body { min-height: 100%; margin: 0; padding: 0 }
-      #map-wrap { padding: 2em 0; position: absolute; top: 0; bottom: 0; left: 0; right: 0 }
-      header { margin-top: -2em; height: 2em; padding-left: 2em }
+      #map-wrap { padding: 1.5em 0; position: absolute; top: 0; bottom: 0; left: 0; right: 0 }
+      header { margin-top: -1.5em; height: 1.5em; padding-left: 1.5em; background: #00341B; color: #D9D9D9 }
       #map { min-height: 100% }
-      footer { margin-bottom: -2em; height: 2em; padding-left: 2em }
+      footer { margin-bottom: -1.5em; height: 1.5em; padding-left: 1.5em; background: #00341B; color: #D9D9D9 }
     </style>
 
     <!-- libs -->
@@ -86,7 +86,7 @@
     <div id="map-wrap">
       <header><strong>Note</strong>: This is not a production-ready application, but rather a proof-of-concept for a glTF-based network rendering technique.</header>
       <div id="map"></div>
-      <footer>WebGL draw call: <span id="timer">0</span> ms (<span id="frames">0</span> FPS). Visible primitives: <span id="vertex">0</span> nodes (<span id="index">0</span> lines).</footer>
+      <footer>WebGL draw call: <span id="timer">0</span> ms (<span id="frames">0</span> FPS). Loaded primitives: <span id="vertex">0</span> nodes (<span id="index">0</span> lines). Tiles in cache: <span id="tiles">0</span> (Parameter hash <span id="hash">0</span>).</footer>
     </div>
   </body>
 </html>
