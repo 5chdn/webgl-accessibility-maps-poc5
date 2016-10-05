@@ -540,6 +540,10 @@ function drawGL() {
     /* adjust line width based on zoom */
     gl.lineWidth(width);
 
+    let t0 = window.performance.now();
+    let vc = 0;
+    let ic = 0;
+
     /* loop all tile buffers in cache and draw each geometry */
     let tileBuffers = TILE_CACHE.getTileBufferCollection();
     for (let i = TILE_CACHE.getSize() - 1; i >= 0; i -= 1) {
@@ -547,6 +551,8 @@ function drawGL() {
       if(tileBuffers[i].getZoom() == m.getZoom()) {
 
         if (MEASURE_RENDERING) window.console.time(MEASURE_ID + "," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom() + "," + (tileBuffers[i].getVertexBuffer().length/2.0));
+
+        vc += tileBuffers[i].getVertexBuffer().length / 2.0;
 
         /* create vertex buffer */
         let vtxBuffer = gl.createBuffer();
@@ -581,6 +587,8 @@ function drawGL() {
           0,
           0
         );
+
+        ic += tileBuffers[i].getIndexBuffer().length / 2.0;
 
         /* create index buffer */
         let idxBuffer = gl.createBuffer();
@@ -637,7 +645,35 @@ function drawGL() {
     }
     gl.finish();
     // if (MEASURE_RENDERING) window.console.timeEnd("drawGL");
+    let t1 = window.performance.now();
+    let dt = t1 - t0;
+    dt = dt.toFixed(3);
+    let fps = 1000.0 / dt;
+    fps = fps.toFixed(1);
+    vc = nFormatter(vc, 1);
+    ic = nFormatter(ic, 1);
+    document.getElementById("timer").innerHTML = dt;
+    document.getElementById("frames").innerHTML = fps;
+    document.getElementById("vertex").innerHTML = vc;
+    document.getElementById("index").innerHTML = ic;
   }
+}
+
+function nFormatter(num, digits) {
+  var si = [
+    { value: 1E18, symbol: "E" },
+    { value: 1E15, symbol: "P" },
+    { value: 1E12, symbol: "T" },
+    { value: 1E9,  symbol: "G" },
+    { value: 1E6,  symbol: "M" },
+    { value: 1E3,  symbol: "k" }
+  ], rx = /\.0+$|(\.[0-9]*[1-9])0+$/, i;
+  for (i = 0; i < si.length; i++) {
+    if (num >= si[i].value) {
+      return (num / si[i].value).toFixed(digits).replace(rx, "$1") + si[i].symbol;
+    }
+  }
+  return num.toFixed(digits).replace(rx, "$1");
 }
 
 /**

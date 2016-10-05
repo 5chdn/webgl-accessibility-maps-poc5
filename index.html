@@ -26,9 +26,12 @@
     <link rel="stylesheet" href="./lib/jquery-ui-bootstrap/assets/js/google-code-prettify/prettify.css" />
 
     <style>
-      html { height: 100% }
-      body { height: 100%; margin: 0; padding: 0 }
-      #map { height: 100% }
+      html { min-height: 100% }
+      body { min-height: 100%; margin: 0; padding: 0 }
+      #map-wrap { padding: 2em 0; position: absolute; top: 0; bottom: 0; left: 0; right: 0 }
+      header { margin-top: -2em; height: 2em; padding-left: 2em }
+      #map { min-height: 100% }
+      footer { margin-bottom: -2em; height: 2em; padding-left: 2em }
     </style>
 
     <!-- libs -->
@@ -80,6 +83,10 @@
   <body onload="accessibility_map()">
 
     <!-- canvas -->
-    <div id="map"></div>
+    <div id="map-wrap">
+      <header><strong>Note</strong>: This is not a production-ready application, but rather a proof-of-concept for a glTF-based network rendering technique.</header>
+      <div id="map"></div>
+      <footer>WebGL draw call: <span id="timer">0</span> ms (<span id="frames">0</span> FPS). Visible primitives: <span id="vertex">0</span> nodes (<span id="index">0</span> lines).</footer>
+    </div>
   </body>
 </html>
