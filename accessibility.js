@@ -21,8 +21,19 @@ const DEFAULT_ZOOM = 10;
 
 /* default travel time, medium and operand */
 let TRAVEL_TIME = 7200;
+const TRAVEL_MAX_ROUTING = 7200;
 let TRAVEL_MEDIUM = 'bike';
 let TRAVEL_OPERAND = 'union';
+const _DATE = new Date();
+const TRAVEL_DATE = _DATE.getFullYear() * 10000
+  + (_DATE.getMonth()+1) * 100
+  + _DATE.getDate();
+const TRAVEL_DATE_TIME = _DATE.getHours() * 60 * 60
+  + _DATE.getMinutes() * 60
+  + _DATE.getSeconds();
+let TRAVEL_DECIMAL_PLACES = 10;
+const TRAVEL_EDGE_CLASSES = [1, 11, 12, 13, 14, 15, 16, 21, 22, 31, 32,
+      41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99];
 
 /* binary geometry tiles */
 let GLTF_TILES;
@@ -265,10 +276,11 @@ function accessibility_map() {
   TILE_CACHE = L.tileBufferCollection(M.getZoom());
 
   /* reset tile buffer cache for each zoom level change */
-  M.on('zoomstart', function(e) {
+  M.on('zoomend', function(e) {
     TILE_CACHE.resetOnZoom(M.getZoom());
     TILE_CACHE_NUM_REQU = 0;
     TILE_CACHE_NUM_RESP = 0;
+    TRAVEL_DECIMAL_PLACES = M.getZoom();
     drawGL();
   });
 
@@ -456,19 +468,16 @@ function requestTile(x, y, z, callback) {
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
   travelOptions.addSource(MARKER_ORIGIN_PRIMAR);
   travelOptions.addSource(MARKER_ORIGIN_SECOND);
-  travelOptions.setMaxRoutingTime(7200);
+  travelOptions.setMaxRoutingTime(TRAVEL_MAX_ROUTING);
   travelOptions.setTravelType(TRAVEL_MEDIUM);
   travelOptions.setIntersectionMode(TRAVEL_OPERAND);
-  travelOptions.setDate(20160824);
-  travelOptions.setTime(32400);
+  travelOptions.setDate(TRAVEL_DATE);
+  travelOptions.setTime(TRAVEL_DATE_TIME);
   travelOptions.setX(x);
   travelOptions.setY(y);
   travelOptions.setZ(z);
-  travelOptions.setDecimalPlaces(z);
-  travelOptions.setEdgeClasses(
-    [1, 11, 12, 13, 14, 15, 16, 21, 22, 31, 32,
-      41, 42, 51, 63, 62, 71, 72, 81, 91, 92, 99]
-  );
+  travelOptions.setDecimalPlaces(TRAVEL_DECIMAL_PLACES);
+  travelOptions.setEdgeClasses(TRAVEL_EDGE_CLASSES);
 
   if (MEASURE_TRANSMISSION) window.console.time("0," + x + "," + y + "," + z);
 
@@ -722,6 +731,11 @@ function latLonToPixels(lat, lon) {
 }
 
 function parametersSha1() {
+  TILE_PARAMETERS.maxRouting = TRAVEL_MAX_ROUTING;
+  /* TILE_PARAMETERS.date = TRAVEL_DATE; */
+  /* TILE_PARAMETERS.dateTime = TRAVEL_DATE_TIME; */
+  /* TILE_PARAMETERS.decimal = TRAVEL_DECIMAL_PLACES; */
+  TILE_PARAMETERS.classes = TRAVEL_EDGE_CLASSES;
   TILE_PARAMETERS.medium = TRAVEL_MEDIUM;
   TILE_PARAMETERS.operand = TRAVEL_OPERAND;
   TILE_PARAMETERS.markers = new Array(2);
