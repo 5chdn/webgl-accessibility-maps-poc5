@@ -41,7 +41,7 @@ let TILE_CACHE_NUM_REQU = 0;
 let TILE_CACHE_NUM_RESP = 0;
 
 /* selected parameters and hash */
-let TILE_PARAMETERS;
+let TILE_PARAMETERS = new Object();
 let TILE_PARAMETERS_SHA1;
 
 /**
@@ -722,11 +722,12 @@ function latLonToPixels(lat, lon) {
 }
 
 function parametersSha1() {
-  const hashMe = MARKER_ORIGIN_PRIMAR.getLatLng() + ";"
-    + MARKER_ORIGIN_SECOND.getLatLng() + ";"
-    + TRAVEL_MEDIUM + ";"
-    + TRAVEL_OPERAND + ";";
-  return Sha1.hash(hashMe);
+  TILE_PARAMETERS.medium = TRAVEL_MEDIUM;
+  TILE_PARAMETERS.operand = TRAVEL_OPERAND;
+  TILE_PARAMETERS.markers = new Array(2);
+  TILE_PARAMETERS.markers[0] = MARKER_ORIGIN_PRIMAR.getLatLng();
+  TILE_PARAMETERS.markers[1] = MARKER_ORIGIN_SECOND.getLatLng();
+  return Sha1.hash(JSON.stringify(TILE_PARAMETERS));
 }
 
 /**
