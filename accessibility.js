@@ -2,14 +2,15 @@
 /*jshint indent: 2 */
 
 /* leaflet map, overlay, canvas */
-let m;
-let o;
-let c;
+let M;
+let O;
+let C;
 
 /* webgl context, shader program, processing unit */
-let gl;
-let sp;
+let GL;
+let SP;
 
+/* enable instrumentation to console log */
 const MEASURE_TRANSMISSION = false;
 const MEASURE_RENDERING = false;
 let MEASURE_ID = 0;
@@ -18,27 +19,30 @@ let MEASURE_ID = 0;
 const DEFAULT_CENTER = [52.516285, 13.386181];
 const DEFAULT_ZOOM = 10;
 
-/* default travel time is 120 minutes */
+/* default travel time, medium and operand */
 let TRAVEL_TIME = 7200;
-let TRAVEL_TYPE = 'bike';
-let INTERSECTION_MODE = 'union';
+let TRAVEL_MEDIUM = 'bike';
+let TRAVEL_OPERAND = 'union';
 
 /* binary geometry tiles */
-let gltfTiles;
+let GLTF_TILES;
+let TEXTURE_IMAGE = new Image();
 
-/* travel time control (r360) and a marker */
-let travelTimeControl;
-let travelTypeButtons;
-let intersectionModeButtons;
-let startMarker;
-//let auxiliaryMarker;
-let textureImage = new Image();
+/* travel time control (r360) and markers */
+let CONTROL_TIME;
+let CONTROL_MEDIUM;
+let CONTROL_OPERAND;
+let MARKER_ORIGIN_PRIMAR;
+let MARKER_ORIGIN_SECOND;
 
-/* cache for all tile's vertex, index and color buffers */
+/* cache for all tiles, count requests and responses */
 let TILE_CACHE;
-let TILE_SHA1_ID;
-let tc_request = 0;
-let tc_response = 0;
+let TILE_CACHE_NUM_REQU = 0;
+let TILE_CACHE_NUM_RESP = 0;
+
+/* selected parameters and hash */
+let TILE_PARAMETERS;
+let TILE_PARAMETERS_SHA1;
 
 /**
  * initialize the distance map visualization
@@ -46,16 +50,16 @@ let tc_response = 0;
 function accessibility_map() {
   'use strict';
 
-  /* yellow-blue sequence */
-  textureImage.src = "img/mi-r360.png";
+  /* increase timeouts for slow development server */
+  r360.config.requestTimeout = 60000;
 
-  /* workaround for slow devel server */
-  r360.config.requestTimeout = 120000;
+  /* load r360 color gradient */
+  TEXTURE_IMAGE.src = "img/mi-r360.png";
 
   /* leaflet map canvas */
-  m = L.map('map', {
-    minZoom:  0,
-    maxZoom: 99,
+  M = L.map('map', {
+    minZoom:  5,
+    maxZoom: 18,
     maxBounds: L.latLngBounds(L.latLng(49.6, 6.0), L.latLng(54.8, 20.4)),
     noWrap: true,
     continuousWorld: false,
@@ -63,48 +67,48 @@ function accessibility_map() {
   });
 
   /* set viewport to berlin */
-  m.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  M.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   let whiteIcon = L.icon({
     iconUrl   : 'img/marker_source.svg',
     iconSize  : [28, 40],
     iconAnchor: [14, 40]
   });
-  startMarker = L.marker(DEFAULT_CENTER, {
+  MARKER_ORIGIN_PRIMAR = L.marker(DEFAULT_CENTER, {
     draggable: true,
     icon     : whiteIcon
-  }).addTo(m);
-  //auxiliaryMarker = L.marker([52.514, 13.349], {
-  //  draggable: true,
-  //  icon     : whiteIcon
-  //}).addTo(m);
+  }).addTo(M);
+  MARKER_ORIGIN_SECOND = L.marker([52.393616, 13.133086], {
+    draggable: true,
+    icon     : whiteIcon
+  }).addTo(M);
 
-  TILE_SHA1_ID = sha1id();
+  TILE_PARAMETERS_SHA1 = parametersSha1();
 
   /* setup leaflet canvas webgl overlay */
-  o = L.canvasOverlay().drawing(drawGL(true)).addTo(m);
-  c = o.canvas();
-  o.canvas.width = c.clientWidth;
-  o.canvas.height = c.clientHeight;
+  O = L.canvasOverlay().drawing(drawGL(true)).addTo(M);
+  C = O.canvas();
+  O.canvas.width = C.clientWidth;
+  O.canvas.height = C.clientHeight;
 
   /* initialize webgl on canvas overlay */
-  initGL(c);
+  initGL();
   initShaders();
 
   let attribution =
     '<a href="https://carto.com/location-data-services/basemaps/">CartoDB</a> | '
-    + '<a href="https://developers.route360.net/index.html">R360 API</a> | '
+    + '<a href="https://developers.route360.net/index.html">Route360 API</a> | '
     + 'Rendering &copy; <a href="./LICENSE">Schoedon</a>';
-  let bgTiles = L.tileLayer(
+  L.tileLayer(
     'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
     {
       attribution: attribution,
       subdomains: 'abcd',
       maxZoom: 18
     }
-  ).addTo(m);
+  ).addTo(M);
 
   /* use a r360 time slider to adjust travel time */
-  travelTimeControl = r360.travelTimeControl({
+  CONTROL_TIME = r360.travelTimeControl({
     travelTimes: [
       { time:  150 * 2, color: '#00341B' },
       { time:  300 * 2, color: '#004524' },
@@ -138,17 +142,17 @@ function accessibility_map() {
   });
 
   /* create webgl gltf tiles */
-  gltfTiles = L.tileLayer.canvas({
+  GLTF_TILES = L.tileLayer.canvas({
     async:true,
     updateWhenIdle:true,
     reuseTiles:true
   });
-  gltfTiles.drawTile = function(canvas, tile, zoom) {
-    getGltfTiles(tile, zoom, canvas);
+  GLTF_TILES.drawTile = function(canvas, tile, zoom) {
+    requestGltfTiles(tile, zoom, canvas);
   };
-  gltfTiles.addTo(m);
+  GLTF_TILES.addTo(M);
 
-  travelTypeButtons = r360.radioButtonControl({
+  CONTROL_MEDIUM = r360.radioButtonControl({
     buttons: [
       {
         label: '<i class="fa fa-female"></i>  Walking',
@@ -176,19 +180,19 @@ function accessibility_map() {
       }
     ]
   });
-  travelTypeButtons.addTo(m);
-  travelTypeButtons.onChange(function(value){
-    TRAVEL_TYPE = travelTypeButtons.getValue();
-    TILE_SHA1_ID = sha1id();
+  CONTROL_MEDIUM.addTo(M);
+  CONTROL_MEDIUM.onChange(function(value){
+    TRAVEL_MEDIUM = CONTROL_MEDIUM.getValue();
+    TILE_PARAMETERS_SHA1 = parametersSha1();
     TILE_CACHE.resetHard();
-    tc_request = 0;
-    tc_response = 0;
-    gltfTiles.redraw();
+    TILE_CACHE_NUM_REQU = 0;
+    TILE_CACHE_NUM_RESP = 0;
+    GLTF_TILES.redraw();
     drawGL();
   });
-  travelTypeButtons.setPosition('topleft');
+  CONTROL_MEDIUM.setPosition('topleft');
 
-  intersectionModeButtons = r360.radioButtonControl({
+  CONTROL_OPERAND = r360.radioButtonControl({
     buttons: [
       {
         label: '&cup; Union',
@@ -196,14 +200,12 @@ function accessibility_map() {
         tooltip: 'No intersection of polygons',
         checked: true
       },
-
       {
         label: '&cap; Intersection',
         key: 'intersection',
         tooltip: 'Only intersected area shown.',
         checked: false
       },
-
       {
         label: '&#8960; Average',
         key: 'average',
@@ -212,87 +214,86 @@ function accessibility_map() {
       },
     ]
   });
-  //intersectionModeButtons.addTo(m);
-  intersectionModeButtons.onChange(function(value){
-    INTERSECTION_MODE = intersectionModeButtons.getValue();
-    TILE_SHA1_ID = sha1id();
+  CONTROL_OPERAND.addTo(M);
+  CONTROL_OPERAND.onChange(function(value){
+    TRAVEL_OPERAND = CONTROL_OPERAND.getValue();
+    TILE_PARAMETERS_SHA1 = parametersSha1();
     TILE_CACHE.resetHard();
-    tc_request = 0;
-    tc_response = 0;
-    gltfTiles.redraw();
+    TILE_CACHE_NUM_REQU = 0;
+    TILE_CACHE_NUM_RESP = 0;
+    GLTF_TILES.redraw();
     drawGL();
   });
-  intersectionModeButtons.setPosition('topright');
+  CONTROL_OPERAND.setPosition('topright');
 
-  startMarker.on('dragend', function(){
-    TILE_SHA1_ID = sha1id();
+  MARKER_ORIGIN_PRIMAR.on('dragend', function(){
+    TILE_PARAMETERS_SHA1 = parametersSha1();
     TILE_CACHE.resetHard();
-    tc_request = 0;
-    tc_response = 0;
-    gltfTiles.redraw();
+    TILE_CACHE_NUM_REQU = 0;
+    TILE_CACHE_NUM_RESP = 0;
+    GLTF_TILES.redraw();
     drawGL();
   });
 
-  //auxiliaryMarker.on('dragend', function(){
-  //  TILE_SHA1_ID = sha1id();
-  //  TILE_CACHE.resetHard();
-  //  tc_request = 0;
-  //  tc_response = 0;
-  //  gltfTiles.redraw();
-  //  drawGL();
-  //});
+  MARKER_ORIGIN_SECOND.on('dragend', function(){
+    TILE_PARAMETERS_SHA1 = parametersSha1();
+    TILE_CACHE.resetHard();
+    TILE_CACHE_NUM_REQU = 0;
+    TILE_CACHE_NUM_RESP = 0;
+    GLTF_TILES.redraw();
+    drawGL();
+  });
 
   /* redraw the scene after all tiles are loaded */
-  gltfTiles.on('load', function(e) {
+  GLTF_TILES.on('load', function(e) {
       drawGL();
   });
 
   /* update overlay on slider events */
-  travelTimeControl.onSlideMove(function(values){
+  CONTROL_TIME.onSlideMove(function(values){
     TRAVEL_TIME = values[values.length - 1].time;
     drawGL();
   });
-  travelTimeControl.onSlideStop(function(values){
+  CONTROL_TIME.onSlideStop(function(values){
     TRAVEL_TIME = values[values.length - 1].time;
     drawGL();
   });
-  travelTimeControl.addTo(m);
-  travelTimeControl.setPosition('topright');
+  CONTROL_TIME.addTo(M);
+  CONTROL_TIME.setPosition('topright');
 
   /* init cache for tile buffers for current zoom level */
-  TILE_CACHE = L.tileBufferCollection(m.getZoom());
+  TILE_CACHE = L.tileBufferCollection(M.getZoom());
 
   /* reset tile buffer cache for each zoom level change */
-  m.on('zoomstart', function(e) {
-    TILE_CACHE.resetOnZoom(m.getZoom());
-    tc_request = 0;
-    tc_response = 0;
+  M.on('zoomstart', function(e) {
+    TILE_CACHE.resetOnZoom(M.getZoom());
+    TILE_CACHE_NUM_REQU = 0;
+    TILE_CACHE_NUM_RESP = 0;
     drawGL();
   });
 
-  m.on('movestart', function(e) {
+  M.on('movestart', function(e) {
     drawGL();
   });
 
-  m.on('move', function(e) {
+  M.on('move', function(e) {
     drawGL();
   });
 
-  m.on('moveend', function(e) {
+  M.on('moveend', function(e) {
     drawGL();
   });
 
-  let zoomControl = L.control.zoom({ position: 'bottomright' });
-  zoomControl.addTo(m);
+  L.control.zoom({ position: 'bottomright' }).addTo(M);
 }
 
 /**
 * initialize webgl context
 */
-function initGL(canvas) {
+function initGL() {
   'use strict';
 
-  gl = canvas.getContext('experimental-webgl', { antialias: false });
+  GL = C.getContext('experimental-webgl', { antialias: false });
 }
 
 /**
@@ -302,33 +303,33 @@ function initShaders() {
   'use strict';
 
   /* vertex shader */
-  let vShader = getShader("shader-vtx");
+  const vertexShader = getShader("shader-vtx");
 
   /* fragment shader */
-  let fShader = getShader("shader-frg");
+  const fragementShader = getShader("shader-frg");
 
   /* shader program */
-  sp = gl.createProgram();
-  gl.attachShader(sp, vShader);
-  gl.attachShader(sp, fShader);
-  gl.linkProgram(sp);
+  SP = GL.createProgram();
+  GL.attachShader(SP, vertexShader);
+  GL.attachShader(SP, fragementShader);
+  GL.linkProgram(SP);
 
   /* check shader linking */
-  if (!gl.getProgramParameter(sp, gl.LINK_STATUS)) {
+  if (!GL.getProgramParameter(SP, GL.LINK_STATUS)) {
     _log("initShaders(): [ERR]: could not init shaders");
   } else {
 
-    /* use shader programm */
-    gl.useProgram(sp);
+    /* use shader program */
+    GL.useProgram(SP);
 
     /* get attribute and uniform locations */
-    sp.uniformMatrix = gl.getUniformLocation(sp, "u_matrix");
-    sp.textureRamp = gl.getUniformLocation(sp, "u_texture");
-    sp.travelTime = gl.getUniformLocation(sp, "u_time");
-    sp.vertexPosition = gl.getAttribLocation(sp, "a_vertex");
-    sp.textureCoord = gl.getAttribLocation(sp, "a_coord");
-    gl.enableVertexAttribArray(sp.vertexPosition);
-    gl.enableVertexAttribArray(sp.textureCoord);
+    SP.uniformMatrix = GL.getUniformLocation(SP, "u_matrix");
+    SP.textureRamp = GL.getUniformLocation(SP, "u_texture");
+    SP.travelTime = GL.getUniformLocation(SP, "u_time");
+    SP.vertexPosition = GL.getAttribLocation(SP, "a_vertex");
+    SP.textureCoord = GL.getAttribLocation(SP, "a_coord");
+    GL.enableVertexAttribArray(SP.vertexPosition);
+    GL.enableVertexAttribArray(SP.textureCoord);
   }
 }
 
@@ -342,7 +343,7 @@ function getShader(id) {
   'use strict';
 
   let shader;
-  let shaderScript = document.getElementById(id);
+  const shaderScript = document.getElementById(id);
 
   if (!shaderScript) {
     _log("getShader(id): [WRN]: shader not found");
@@ -361,58 +362,62 @@ function getShader(id) {
   if (shaderScript.type == "x-shader/x-fragment") {
 
     /* fragment shader */
-    shader = gl.createShader(gl.FRAGMENT_SHADER);
+    shader = GL.createShader(GL.FRAGMENT_SHADER);
   } else if (shaderScript.type == "x-shader/x-vertex") {
 
     /* vertex shader */
-    shader = gl.createShader(gl.VERTEX_SHADER);
+    shader = GL.createShader(GL.VERTEX_SHADER);
   } else {
     _log("getShader(id): [WRN]: unknown shader type");
     return null;
   }
 
-  gl.shaderSource(shader, str);
-  gl.compileShader(shader);
+  GL.shaderSource(shader, str);
+  GL.compileShader(shader);
 
   /* check shader compile status */
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+  if (!GL.getShaderParameter(shader, GL.COMPILE_STATUS)) {
     _log("getShader(id): [ERR]: shader failed to compile");
-    _log(gl.getShaderInfoLog(shader));
+    _log(GL.getShaderInfoLog(shader));
     return null;
   }
 
   return shader;
 }
 
-function getGltfTiles(tile, zoom, canvas) {
+function requestGltfTiles(tile, zoom, canvas) {
   'use strict';
 
-  tc_request++;
+  TILE_CACHE_NUM_REQU++;
 
   /* request tile from tiling server */
   requestTile(tile.x, tile.y, zoom, function(response){
 
-    tc_response++;
-    let tc_perc = tc_response / tc_request * 100.0;
+    /* update status bar */
+    TILE_CACHE_NUM_RESP++;
+    let tc_perc = TILE_CACHE_NUM_RESP / TILE_CACHE_NUM_REQU * 100.0;
     document.getElementById("bar").innerHTML = statusBar(tc_perc);
     document.getElementById("perc").innerHTML = tc_perc.toFixed(2);
 
-    //_log(tc_response + "," + tc_request + "," + tc_perc.toFixed(0));
+    const buffers = response.data.tile.gltf.buffers;
 
+    /* measure transmission times if desired */
     if (MEASURE_TRANSMISSION) {
       window.console.timeEnd("0," + tile.x + "," + tile.y + "," + zoom);
-      window.console.log(";;;" + (response.data.tile.gltf.buffers.vertices.length/2.0) + "," + response.requestTime + "," + JSON.stringify(response).length);
+      window.console.log(";;;" + (buffers.vertices.length/2.0) + ","
+        + response.requestTime + "," + JSON.stringify(response).length);
     }
 
-    if (response.data.tile.gltf.buffers.vertices.length > 0 &&
-      response.data.tile.gltf.buffers.indices.length > 0 &&
-      response.id.localeCompare(TILE_SHA1_ID) == 0) {
+    /* proceed on valid responses */
+    if (buffers.vertices.length > 0 &&
+      buffers.indices.length > 0 &&
+      response.id.localeCompare(TILE_PARAMETERS_SHA1) == 0) {
 
       /* create a tile buffer object for the current tile */
       let tileBuffer = L.tileBuffer(
-        response.data.tile.gltf.buffers.vertices,
-        response.data.tile.gltf.buffers.indices,
-        response.data.tile.gltf.buffers.times,
+        buffers.vertices,
+        buffers.indices,
+        buffers.times,
         {
           x: tile.x,
           y: tile.y,
@@ -430,10 +435,7 @@ function getGltfTiles(tile, zoom, canvas) {
 
       /* redraw the scene */
       drawGL();
-      gltfTiles.tileDrawn(canvas);
-
-
-      // if (MEASURE_TRANSMISSION) window.console.timeEnd("getGltfTiles," + tile.x + "," + tile.y + "," + zoom);
+      GLTF_TILES.tileDrawn(canvas);
     }
   });
 }
@@ -452,11 +454,11 @@ function requestTile(x, y, z, callback) {
   let travelOptions = r360.travelOptions();
   travelOptions.setServiceKey('ZTOCBA4MNLQLQQPXHQDW');
   travelOptions.setServiceUrl('https://dev.route360.net/mobie/');
-  travelOptions.addSource(startMarker);
-  //travelOptions.addSource(auxiliaryMarker);
+  travelOptions.addSource(MARKER_ORIGIN_PRIMAR);
+  travelOptions.addSource(MARKER_ORIGIN_SECOND);
   travelOptions.setMaxRoutingTime(7200);
-  travelOptions.setTravelType(TRAVEL_TYPE);
-  travelOptions.setIntersectionMode(INTERSECTION_MODE);
+  travelOptions.setTravelType(TRAVEL_MEDIUM);
+  travelOptions.setIntersectionMode(TRAVEL_OPERAND);
   travelOptions.setDate(20160824);
   travelOptions.setTime(32400);
   travelOptions.setX(x);
@@ -470,7 +472,7 @@ function requestTile(x, y, z, callback) {
 
   if (MEASURE_TRANSMISSION) window.console.time("0," + x + "," + y + "," + z);
 
-  r360.MobieService.getGraph(TILE_SHA1_ID, travelOptions, callback);
+  r360.MobieService.getGraph(TILE_PARAMETERS_SHA1, travelOptions, callback);
 }
 
 /**
@@ -480,36 +482,34 @@ function drawGL() {
   'use strict';
 
   /* only proceed if context is available */
-  if (gl) {
-
-    // if (MEASURE_RENDERING) window.console.time("drawGL");
+  if (GL) {
 
     /* enable blending */
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    GL.enable(GL.BLEND);
+    GL.blendFunc(GL.SRC_ALPHA, GL.ONE_MINUS_SRC_ALPHA);
 
     /* disable depth testing */
-    gl.disable(gl.DEPTH_TEST);
+    GL.disable(GL.DEPTH_TEST);
 
     /* clear color buffer for redraw */
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    GL.clear(GL.COLOR_BUFFER_BIT);
 
     /* set view port to canvas size */
-    gl.viewport(0, 0, c.width, c.height);
+    GL.viewport(0, 0, C.width, C.height);
 
      /* get map bounds and top left corner used for webgl translation later */
-    let bounds = m.getBounds();
-    let topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
+    const bounds = M.getBounds();
+    const topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
 
     /* precalculate map scale, offset and line width */
-    let zoom = m.getZoom();
-    let scale = Math.pow(2, zoom) * 256.0;
-    let offset = latLonToPixels(topLeft.lat, topLeft.lng);
-    let width = Math.max(zoom - 12.0, 1.0);
+    const zoom = M.getZoom();
+    const scale = Math.pow(2, zoom) * 256.0;
+    const offset = latLonToPixels(topLeft.lat, topLeft.lng);
+    const width = Math.max(zoom - 12.0, 1.0);
 
     /* define sizes of vertex and texture coordinate buffer objects */
-    let vtxSize = 2;
-    let texSize = 1;
+    const vertexSize = 2;
+    const texSize = 1;
 
     /* define model view matrix. here: identity */
     let uMatrix = new Float32Array([
@@ -520,32 +520,32 @@ function drawGL() {
     ]);
 
     /* generate texture from color gradient */
-    let texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
+    let texture = GL.createTexture();
+    GL.bindTexture(GL.TEXTURE_2D, texture);
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE);
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.NEAREST);
+    GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MAG_FILTER, GL.NEAREST);
+    GL.texImage2D(
+      GL.TEXTURE_2D,
       0,
-      gl.RGBA,
-      gl.RGBA,
-      gl.UNSIGNED_BYTE,
-      textureImage
+      GL.RGBA,
+      GL.RGBA,
+      GL.UNSIGNED_BYTE,
+      TEXTURE_IMAGE
     );
-    let texUnit = 5;
-    gl.activeTexture(gl.TEXTURE0 + texUnit);
-    gl.uniform1i(sp.textureRamp, texUnit);
+    const texUnit = 5;
+    GL.activeTexture(GL.TEXTURE0 + texUnit);
+    GL.uniform1i(SP.textureRamp, texUnit);
 
     /* pass selected travel time to fragment shader */
-    gl.uniform1f(sp.travelTime, TRAVEL_TIME / 3600.0);
+    GL.uniform1f(SP.travelTime, TRAVEL_TIME / 3600.0);
 
     /* translate to move [0,0] to top left corner */
     translateMatrix(uMatrix, -1, 1);
 
     /* scale based on canvas width and height */
-    scaleMatrix(uMatrix, 2.0 / c.width, -2.0 / c.height);
+    scaleMatrix(uMatrix, 2.0 / C.width, -2.0 / C.height);
 
     /* scale based on map zoom scale */
     scaleMatrix(uMatrix, scale, scale);
@@ -554,171 +554,157 @@ function drawGL() {
     translateMatrix(uMatrix, -offset.x, -offset.y);
 
     /* set model view */
-    gl.uniformMatrix4fv(sp.uniformMatrix, false, uMatrix);
+    GL.uniformMatrix4fv(SP.uniformMatrix, false, uMatrix);
 
     /* adjust line width based on zoom */
-    gl.lineWidth(width);
+    GL.lineWidth(width);
 
-    let t0 = window.performance.now();
-    let vc = 0;
-    let ic = 0;
-    let dc = 0;
+    let renderTime = window.performance.now();
+    let vertexCount = 0;
+    let indexCount = 0;
+    let drawCount = 0;
 
     /* loop all tile buffers in cache and draw each geometry */
-    let tileBuffers = TILE_CACHE.getTileBufferCollection();
+    const tileBuffers = TILE_CACHE.getTileBufferCollection();
     for (let i = TILE_CACHE.getSize() - 1; i >= 0; i -= 1) {
 
-      if(tileBuffers[i].getZoom() == m.getZoom()) {
+      /* only render tiles for current zoom level */
+      if(tileBuffers[i].getZoom() == M.getZoom()) {
 
-        if (MEASURE_RENDERING) window.console.time(MEASURE_ID + "," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom() + "," + (tileBuffers[i].getVertexBuffer().length/2.0));
+        /* measure rendering if desired */
+        if (MEASURE_RENDERING) window.console.time(MEASURE_ID + ","
+          + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + ","
+          + tileBuffers[i].getZoom() + ","
+          + (tileBuffers[i].getVertexBuffer().length/2.0));
 
-        vc += tileBuffers[i].getVertexBuffer().length / 2.0;
+        vertexCount += tileBuffers[i].getVertexBuffer().length / 2.0;
 
         /* create vertex buffer */
-        let vtxBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vtxBuffer);
-        gl.bufferData(
-          gl.ARRAY_BUFFER,
+        let vertexBuffer = GL.createBuffer();
+        GL.bindBuffer(GL.ARRAY_BUFFER, vertexBuffer);
+        GL.bufferData(
+          GL.ARRAY_BUFFER,
           tileBuffers[i].getVertexBuffer(),
-          gl.STATIC_DRAW
+          GL.STATIC_DRAW
         );
-        gl.vertexAttribPointer(
-          sp.vertexPosition,
-          vtxSize,
-          gl.FLOAT,
+        GL.vertexAttribPointer(
+          SP.vertexPosition,
+          vertexSize,
+          GL.FLOAT,
           false,
           0,
           0
         );
 
         /* create texture coordinate buffer */
-        let texBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, texBuffer);
-        gl.bufferData(
-          gl.ARRAY_BUFFER,
+        let textureBuffer = GL.createBuffer();
+        GL.bindBuffer(GL.ARRAY_BUFFER, textureBuffer);
+        GL.bufferData(
+          GL.ARRAY_BUFFER,
           tileBuffers[i].getColorBuffer(),
-          gl.STATIC_DRAW
+          GL.STATIC_DRAW
         );
-        gl.vertexAttribPointer(
-          sp.textureCoord,
+        GL.vertexAttribPointer(
+          SP.textureCoord,
           texSize,
-          gl.FLOAT,
+          GL.FLOAT,
           false,
           0,
           0
         );
 
-        ic += tileBuffers[i].getIndexBuffer().length / 2.0;
+        indexCount += tileBuffers[i].getIndexBuffer().length / 2.0;
 
         /* create index buffer */
-        let idxBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
+        let indexBuffer = GL.createBuffer();
+        GL.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, indexBuffer);
 
         /* draw geometry lines by indices */
         if (tileBuffers[i].getIndexBuffer().length > 65535) {
 
           /* use 32 bit extension */
-          let ext = (
-            gl.getExtension('OES_element_index_uint') ||
-            gl.getExtension('MOZ_OES_element_index_uint') ||
-            gl.getExtension('WEBKIT_OES_element_index_uint')
+          const ext = (
+            GL.getExtension('OES_element_index_uint') ||
+            GL.getExtension('MOZ_OES_element_index_uint') ||
+            GL.getExtension('WEBKIT_OES_element_index_uint')
           );
 
-          let buffer = new Uint32Array(tileBuffers[i].getIndexBuffer());
-          gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
-          gl.drawElements(
-            gl.LINES,
+          const buffer = new Uint32Array(tileBuffers[i].getIndexBuffer());
+          GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, buffer, GL.STATIC_DRAW);
+          GL.drawElements(
+            GL.LINES,
             tileBuffers[i].getIndexBuffer().length,
-            gl.UNSIGNED_INT,
-            idxBuffer
+            GL.UNSIGNED_INT,
+            indexBuffer
           );
-          dc++;
+          drawCount++;
         } else {
 
           /* fall back to webgl default 16 bit short */
-          let buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
-          gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
-          gl.drawElements(
-            gl.LINES,
+          const buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
+          GL.bufferData(GL.ELEMENT_ARRAY_BUFFER, buffer, GL.STATIC_DRAW);
+          GL.drawElements(
+            GL.LINES,
             tileBuffers[i].getIndexBuffer().length,
-            gl.UNSIGNED_SHORT,
-            idxBuffer
+            GL.UNSIGNED_SHORT,
+            indexBuffer
           );
-          dc++;
+          drawCount++;
         }
-        gl.finish();
+        GL.finish();
         if (MEASURE_RENDERING) {
-          window.console.timeEnd(MEASURE_ID + "," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom() + "," + (tileBuffers[i].getVertexBuffer().length/2.0));
+          window.console.timeEnd(MEASURE_ID + "," + tileBuffers[i].getX()
+            + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom() + ","
+            + (tileBuffers[i].getVertexBuffer().length/2.0));
           ++MEASURE_ID;
         }
       }
     }
-    gl.finish();
+    GL.finish();
 
-    let t1 = window.performance.now();
-    let dt = t1 - t0;
-    dt = dt.toFixed(3);
-    let fps = 1000.0 / dt;
-    fps = fps.toFixed(1);
-    vc = nFormatter(vc, 1);
-    ic = nFormatter(ic, 1);
-    document.getElementById("calls").innerHTML = dc;
-    document.getElementById("timer").innerHTML = dt;
-    document.getElementById("frames").innerHTML = fps;
-    document.getElementById("vertex").innerHTML = vc;
-    document.getElementById("index").innerHTML = ic;
+    /* update debug info on UI */
+    renderTime = window.performance.now() - renderTime;
+    let fps = 1000.0 / renderTime;
+    document.getElementById("calls").innerHTML = drawCount;
+    document.getElementById("timer").innerHTML = renderTime.toFixed(3);
+    document.getElementById("frames").innerHTML = fps.toFixed(1);
+    document.getElementById("vertex").innerHTML = nFormatter(vertexCount, 1);
+    document.getElementById("index").innerHTML = nFormatter(indexCount, 1);
     document.getElementById("tiles").innerHTML = TILE_CACHE.getSize();
-    document.getElementById("hash").innerHTML = TILE_SHA1_ID;
+    document.getElementById("hash").innerHTML = TILE_PARAMETERS_SHA1;
   }
-}
-
-function nFormatter(num, digits) {
-  var si = [
-    { value: 1E18, symbol: "E" },
-    { value: 1E15, symbol: "P" },
-    { value: 1E12, symbol: "T" },
-    { value: 1E9,  symbol: "G" },
-    { value: 1E6,  symbol: "M" },
-    { value: 1E3,  symbol: "k" }
-  ], rx = /\.0+$|(\.[0-9]*[1-9])0+$/, i;
-  for (i = 0; i < si.length; i++) {
-    if (num >= si[i].value) {
-      return (num / si[i].value).toFixed(digits).replace(rx, "$1") + si[i].symbol;
-    }
-  }
-  return num.toFixed(digits).replace(rx, "$1");
 }
 
 /**
 * helper: simple translation along x/y (2D)
 *
-* @param {Float32Array} m the output matrix to be translated
+* @param {Float32Array} matrix the output matrix to be translated
 * @param {integer} x the translation factor along x
 * @param {integer} y the translation factor along y
 */
-function translateMatrix(m, x, y) {
-  m[12] += m[0] * x + m[4] * y;
-  m[13] += m[1] * x + m[5] * y;
-  m[14] += m[2] * x + m[6] * y;
-  m[15] += m[3] * x + m[7] * y;
+function translateMatrix(matrix, x, y) {
+  matrix[12] += matrix[0] * x + matrix[4] * y;
+  matrix[13] += matrix[1] * x + matrix[5] * y;
+  matrix[14] += matrix[2] * x + matrix[6] * y;
+  matrix[15] += matrix[3] * x + matrix[7] * y;
 }
 
 /**
 * helper: simple scaling along x/y (2D)
 *
-* @param {Float32Array} m the output matrix to be scaled
+* @param {Float32Array} matrix the output matrix to be scaled
 * @param {integer} x the scaling factor along x
 * @param {integer} y the scaling factor along y
 */
-function scaleMatrix(m, x, y) {
-  m[0] *= x;
-  m[1] *= x;
-  m[2] *= x;
-  m[3] *= x;
-  m[4] *= y;
-  m[5] *= y;
-  m[6] *= y;
-  m[7] *= y;
+function scaleMatrix(matrix, x, y) {
+  matrix[0] *= x;
+  matrix[1] *= x;
+  matrix[2] *= x;
+  matrix[3] *= x;
+  matrix[4] *= y;
+  matrix[5] *= y;
+  matrix[6] *= y;
+  matrix[7] *= y;
 }
 
 /**
@@ -735,14 +721,45 @@ function latLonToPixels(lat, lon) {
   return L.point(pixelX, pixelY);
 }
 
-function sha1id() {
-  let hashMe = startMarker.getLatLng() + ";"
-    //+ auxiliaryMarker.getLatLng() + ";"
-    + TRAVEL_TYPE + ";"
-    + INTERSECTION_MODE + ";";
+function parametersSha1() {
+  const hashMe = MARKER_ORIGIN_PRIMAR.getLatLng() + ";"
+    + MARKER_ORIGIN_SECOND.getLatLng() + ";"
+    + TRAVEL_MEDIUM + ";"
+    + TRAVEL_OPERAND + ";";
   return Sha1.hash(hashMe);
 }
 
+/**
+* helper: format big numbers in compact format
+*
+* @param {float} num the number to format
+* @param {integer} digits the decimal points to use
+* @return {String} the formatted compact number
+*/
+function nFormatter(num, digits) {
+  let si = [
+    { value: 1E18, symbol: "E" },
+    { value: 1E15, symbol: "P" },
+    { value: 1E12, symbol: "T" },
+    { value: 1E9,  symbol: "G" },
+    { value: 1E6,  symbol: "M" },
+    { value: 1E3,  symbol: "k" }
+  ], rx = /\.0+$|(\.[0-9]*[1-9])0+$/, i;
+  for (i = 0; i < si.length; i++) {
+    if (num >= si[i].value) {
+      return (num / si[i].value).toFixed(digits).replace(rx, "$1")
+        + si[i].symbol;
+    }
+  }
+  return num.toFixed(digits).replace(rx, "$1");
+}
+
+/**
+* helper: format a status bar based on status percent
+*
+* @param {float} perc the status
+* @return {String} the formatted status bar
+*/
 function statusBar(perc) {
   if (perc < 10)
     return "----------";
