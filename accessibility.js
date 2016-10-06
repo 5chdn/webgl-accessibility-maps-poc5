@@ -37,6 +37,8 @@ let textureImage = new Image();
 /* cache for all tile's vertex, index and color buffers */
 let TILE_CACHE;
 let TILE_SHA1_ID;
+let tc_request = 0;
+let tc_response = 0;
 
 /**
  * initialize the distance map visualization
@@ -179,6 +181,8 @@ function accessibility_map() {
     TRAVEL_TYPE = travelTypeButtons.getValue();
     TILE_SHA1_ID = sha1id();
     TILE_CACHE.resetHard();
+    tc_request = 0;
+    tc_response = 0;
     gltfTiles.redraw();
     drawGL();
   });
@@ -213,6 +217,8 @@ function accessibility_map() {
     INTERSECTION_MODE = intersectionModeButtons.getValue();
     TILE_SHA1_ID = sha1id();
     TILE_CACHE.resetHard();
+    tc_request = 0;
+    tc_response = 0;
     gltfTiles.redraw();
     drawGL();
   });
@@ -221,6 +227,8 @@ function accessibility_map() {
   startMarker.on('dragend', function(){
     TILE_SHA1_ID = sha1id();
     TILE_CACHE.resetHard();
+    tc_request = 0;
+    tc_response = 0;
     gltfTiles.redraw();
     drawGL();
   });
@@ -228,6 +236,8 @@ function accessibility_map() {
   //auxiliaryMarker.on('dragend', function(){
   //  TILE_SHA1_ID = sha1id();
   //  TILE_CACHE.resetHard();
+  //  tc_request = 0;
+  //  tc_response = 0;
   //  gltfTiles.redraw();
   //  drawGL();
   //});
@@ -255,6 +265,8 @@ function accessibility_map() {
   /* reset tile buffer cache for each zoom level change */
   m.on('zoomstart', function(e) {
     TILE_CACHE.resetOnZoom(m.getZoom());
+    tc_request = 0;
+    tc_response = 0;
     drawGL();
   });
 
@@ -375,10 +387,17 @@ function getShader(id) {
 function getGltfTiles(tile, zoom, canvas) {
   'use strict';
 
-  // if (MEASURE_TRANSMISSION) window.console.time("getGltfTiles," + tile.x + "," + tile.y + "," + zoom);
+  tc_request++;
 
   /* request tile from tiling server */
   requestTile(tile.x, tile.y, zoom, function(response){
+
+    tc_response++;
+    let tc_perc = tc_response / tc_request * 100.0;
+    document.getElementById("bar").innerHTML = statusBar(tc_perc);
+    document.getElementById("perc").innerHTML = tc_perc.toFixed(2);
+
+    //_log(tc_response + "," + tc_request + "," + tc_perc.toFixed(0));
 
     if (MEASURE_TRANSMISSION) {
       window.console.timeEnd("0," + tile.x + "," + tile.y + "," + zoom);
@@ -543,6 +562,7 @@ function drawGL() {
     let t0 = window.performance.now();
     let vc = 0;
     let ic = 0;
+    let dc = 0;
 
     /* loop all tile buffers in cache and draw each geometry */
     let tileBuffers = TILE_CACHE.getTileBufferCollection();
@@ -594,13 +614,8 @@ function drawGL() {
         let idxBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuffer);
 
-        // catch issue #33
-        //_log("DEBUG#33: " + tileBuffers[i].getIndexBuffer().length);
-
         /* draw geometry lines by indices */
         if (tileBuffers[i].getIndexBuffer().length > 65535) {
-
-          // if (MEASURE_RENDERING) window.console.time("drawGL.tile.x32," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
 
           /* use 32 bit extension */
           let ext = (
@@ -617,11 +632,8 @@ function drawGL() {
             gl.UNSIGNED_INT,
             idxBuffer
           );
-
-          // if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile.x32," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+          dc++;
         } else {
-
-          // if (MEASURE_RENDERING) window.console.time("drawGL.tile.x16," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
 
           /* fall back to webgl default 16 bit short */
           let buffer = new Uint16Array(tileBuffers[i].getIndexBuffer());
@@ -632,9 +644,7 @@ function drawGL() {
             gl.UNSIGNED_SHORT,
             idxBuffer
           );
-
-          gl.finish();
-          // if (MEASURE_RENDERING) window.console.timeEnd("drawGL.tile.x16," + tileBuffers[i].getX() + "," + tileBuffers[i].getY() + "," + tileBuffers[i].getZoom());
+          dc++;
         }
         gl.finish();
         if (MEASURE_RENDERING) {
@@ -644,7 +654,7 @@ function drawGL() {
       }
     }
     gl.finish();
-    // if (MEASURE_RENDERING) window.console.timeEnd("drawGL");
+
     let t1 = window.performance.now();
     let dt = t1 - t0;
     dt = dt.toFixed(3);
@@ -652,6 +662,7 @@ function drawGL() {
     fps = fps.toFixed(1);
     vc = nFormatter(vc, 1);
     ic = nFormatter(ic, 1);
+    document.getElementById("calls").innerHTML = dc;
     document.getElementById("timer").innerHTML = dt;
     document.getElementById("frames").innerHTML = fps;
     document.getElementById("vertex").innerHTML = vc;
@@ -730,6 +741,31 @@ function sha1id() {
     + TRAVEL_TYPE + ";"
     + INTERSECTION_MODE + ";";
   return Sha1.hash(hashMe);
+}
+
+function statusBar(perc) {
+  if (perc < 10)
+    return "----------";
+  if (perc < 20)
+    return "|---------";
+  if (perc < 30)
+    return "||--------";
+  if (perc < 40)
+    return "|||-------";
+  if (perc < 50)
+    return "||||------";
+  if (perc < 60)
+    return "|||||-----";
+  if (perc < 70)
+    return "||||||----";
+  if (perc < 80)
+    return "|||||||---";
+  if (perc < 90)
+    return "||||||||--";
+  if (perc < 100)
+    return "|||||||||-";
+
+  return "||||||||||";
 }
 
 /**
