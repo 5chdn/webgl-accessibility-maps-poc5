@@ -3,18 +3,38 @@
 
 <!--
   Proof of concept implementation of webgl/gltf tiles for leaflet
-  accessibility maps / r360 js api.
+  accessibility maps requested from route360-js api.
 
   ** Copyright & License **
   (C) 2015-2016 Alexander Schoedon <schoedon@uni-potsdam.de>
 
   All rights reserved. View LICENSE for full GPLv3 conditions.
-
 -->
 
 <html>
   <head>
-    <title>accessibility maps proof of concept #5 webgl gltf tiling</title>
+    <title>reachability maps proof of concept #5 webgl gltf tiling</title>
+  </head>
+
+  <body onload="accessibility_map()">
+    <div id="map-wrap">
+
+      <!-- header note -->
+      <header><strong>Note</strong>: This is not a production-ready application,
+        but rather a proof-of-concept for a glTF-based network rendering
+        technique. Parameter hash <span id="hash">0</span>.</header>
+
+      <!-- map canvas -->
+      <div id="map"></div>
+
+      <!-- debug footer -->
+      <footer>Network loaded [<span id="bar">----------</span>]
+        <span id="perc">0.00</span>%, <span id="calls">0</span> WebGL draw
+        call(s) in <span id="timer">0</span> ms (<span id="frames">0</span>
+        FPS). Loaded primitives: <span id="vertex">0</span> nodes (
+        <span id="index">0</span> lines). Tiles in cache:
+        <span id="tiles">0</span>.</footer>
+    </div>
 
     <!-- styles -->
     <link rel="stylesheet" href="./lib/jquery-ui-bootstrap/css/custom-theme/jquery-ui-1.10.0.custom.css" />
@@ -79,14 +99,5 @@
         }
       }
     </script>
-  </head>
-  <body onload="accessibility_map()">
-
-    <!-- canvas -->
-    <div id="map-wrap">
-      <header><strong>Note</strong>: This is not a production-ready application, but rather a proof-of-concept for a glTF-based network rendering technique. Parameter hash <span id="hash">0</span>.</header>
-      <div id="map"></div>
-      <footer>Network loaded [<span id="bar">----------</span>] <span id="perc">0.00</span>%, <span id="calls">0</span> WebGL draw call(s) in <span id="timer">0</span> ms (<span id="frames">0</span> FPS). Loaded primitives: <span id="vertex">0</span> nodes (<span id="index">0</span> lines). Tiles in cache: <span id="tiles">0</span>.</footer>
-    </div>
   </body>
 </html>
