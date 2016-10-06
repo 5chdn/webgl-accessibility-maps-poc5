@@ -186,7 +186,7 @@ function accessibility_map() {
       {
         label: '<i class="fa fa-bus"></i> Transit',
         key: 'transit',
-        tooltip: 'This demo only contains subways',
+        tooltip: 'This contains public transportation',
         checked: false
       }
     ]
@@ -208,7 +208,7 @@ function accessibility_map() {
       {
         label: '&cup; Union',
         key: 'union',
-        tooltip: 'No intersection of polygons',
+        tooltip: 'No intersection shown',
         checked: true
       },
       {
@@ -220,7 +220,7 @@ function accessibility_map() {
       {
         label: '&#8960; Average',
         key: 'average',
-        tooltip: 'Average travel time in polygons',
+        tooltip: 'Average travel time shown',
         checked: false
       },
     ]
@@ -235,7 +235,7 @@ function accessibility_map() {
     GLTF_TILES.redraw();
     drawGL();
   });
-  CONTROL_OPERAND.setPosition('topright');
+  CONTROL_OPERAND.setPosition('bottomleft');
 
   MARKER_ORIGIN_PRIMAR.on('dragend', function(){
     TILE_PARAMETERS_SHA1 = parametersSha1();
