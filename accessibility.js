@@ -513,7 +513,7 @@ function drawGL() {
     /* precalculate map scale, offset and line width */
     const zoom = M.getZoom();
     const scale = Math.pow(2, zoom) * 256.0;
-    const offset = latLonToPixels(topLeft.lat, topLeft.lng);
+    const offset = normalizeLatLon(topLeft.lat, topLeft.lng);
     const width = Math.max(zoom - 12.0, 1.0);
 
     /* define sizes of vertex and texture coordinate buffer objects */
@@ -717,17 +717,18 @@ function scaleMatrix(matrix, x, y) {
 }
 
 /**
- * Converts latitude/longitude to tile pixel X/Y at zoom level 0
- * for 1x1 tile size and inverts y coordinates. (EPSG: 4326)
+ * Converts latitude/longitude to Normalized Mercator coordinates
+ * for equator size of 1.0 and inverts the y axis (from EPSG:4326)
  *
- * @param {L.point} p Leaflet point in EPSG:3857
- * @return {L.point} Leaflet point with tile pixel x and y corrdinates
+ * @param {float} lat Latitude coordinate in EPSG:4326
+ * @param {float} lon Longitude coordinate in EPSG:4326
+ * @return {L.point} Leaflet point with tile normalized x and y coordinates
  */
-function latLonToPixels(lat, lon) {
-  let sinLat = Math.sin(lat * Math.PI / 180.0);
-  let pixelX = ((lon + 180) / 360);
-  let pixelY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (Math.PI * 4));
-  return L.point(pixelX, pixelY);
+function normalizeLatLon(lat, lon) {
+  let l = Math.sin(lat * Math.PI / 180.0);
+  let x = ((lon + 180) / 360);
+  let y = (0.5 - Math.log((1 + l) / (1 - l)) / (Math.PI * 4));
+  return L.point(x, y);
 }
 
 function parametersSha1() {
