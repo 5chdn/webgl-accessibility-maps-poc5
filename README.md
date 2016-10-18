@@ -1,8 +1,8 @@
-Accessibility Maps WebGL Visualization
-======================================
+Reachability Maps WebGL Visualization
+=====================================
 
-GPU-accelerated (JS/WebGL) rendering of network-based accessibility maps.
-<span>#leaflet #route360 #webgl #gltf #accessibilitymaps #proofofconcept #5.</span>
+GPU-accelerated (JS/WebGL) rendering of network-based reachability maps.
+<span>#leaflet #route360 #webgl #gltf #reachabilitymaps #proofofconcept #5.</span>
 
 
 Proof of Concept #5
